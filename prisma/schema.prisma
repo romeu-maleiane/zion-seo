@@ -9,24 +9,36 @@ generator client {
 // enough when changing adapters.
 // See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "mongodb"
+  url      =  env("DATABASE_URL")
 }
 
-model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+model Store {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  storeId     String    @unique
+  storeName   String
+  storeDomain String    @unique
+  email       String    @unique
+  products    Product[]
+  activePlan  String    @default("free")
+  aiCredits   Int       @default(20)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id          String   @id  @default(auto()) @map("_id") @db.ObjectId
+  productId   String @unique
+  productImage String?
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [storeId])
+  title       String
+  currentDescription String
+  currentMetaTitle String
+  currentMetaDescription String
+  generatedDescription String?
+  generatedMetaTitle String?
+  generatedMetaDescription String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
