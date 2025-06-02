@@ -16,6 +16,7 @@ import {
 } from "@shopify/polaris";
 import { TitleBar, } from "@shopify/app-bridge-react";
 import { authenticate } from "../../shopify.server";
+import Footer from "app/Components/footer.component";
 
 
 type Data = {
@@ -234,6 +235,10 @@ export default function Index() {
 
             </InlineGrid>
           </Card>
+        </Layout.Section>
+
+        <Layout.Section>
+          <Footer />
         </Layout.Section>
       </Layout>
     </Page>
