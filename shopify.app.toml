@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://klein-louisville-amino-namespace.trycloudflare.com"
+application_url = "https://dinner-color-frequent-katie.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://klein-louisville-amino-namespace.trycloudflare.com/auth/callback",
-  "https://klein-louisville-amino-namespace.trycloudflare.com/auth/shopify/callback",
-  "https://klein-louisville-amino-namespace.trycloudflare.com/api/auth/callback"
+  "https://dinner-color-frequent-katie.trycloudflare.com/auth/callback",
+  "https://dinner-color-frequent-katie.trycloudflare.com/auth/shopify/callback",
+  "https://dinner-color-frequent-katie.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
