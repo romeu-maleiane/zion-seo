@@ -1,5 +1,7 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import type { LoaderFunctionArgs, } from "@remix-run/node";
+import { useLoaderData, } from "@remix-run/react";
+import { ArrowUpIcon, ArrowDownIcon } from '@shopify/polaris-icons';
+
 import {
   Page,
   Layout,
@@ -8,32 +10,88 @@ import {
   Button,
   BlockStack,
   Box,
-  List,
   Link,
   InlineStack,
   InlineGrid,
   ProgressBar,
+  Icon,
 } from "@shopify/polaris";
-import { TitleBar, } from "@shopify/app-bridge-react";
 import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
+import { getShopMetrics } from "app/utils/getShoMetrics.server";
 
 
 type Data = {
-  
+  countOfProducts: number;
+  countOfOptimizedProducts: number;
+  countOfOptimizedDescriptions: number;
+  countOfOptimizedMetaData: number;
+  percentageAdvanceOfOptimizedProducts: number;
+  percentageAdvanceOfOptimizedDescriptions: number;
+  percentageAdvanceOfOptimizedMetaData: number;
+  noDataOfOptimizedProductsYet?: boolean;
+  noDataOfDescriptionsYet?: boolean;
+  noDataOfMetaDataYet?: boolean;
 }
 
-export const loader = async ({ request }: ActionFunctionArgs) => {
-  const { admin, } = await authenticate.admin(request);
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { admin } = await authenticate.admin(request);
+
+  const response = await admin.graphql(
+    `#graphql
+  query shopInfo {
+    shop {
+      id
+    }
+  }`,
+  );
+
+  const data = await response.json()
+
+  const shopId: string = data.data.shop.id
+
+  const {
+    countOfProducts,
+    countOfOptimizedProducts,
+    countOfOptimizedDescriptions,
+    countOfOptimizedMetaData,
+    percentageAdvanceOfOptimizedProducts,
+    percentageAdvanceOfOptimizedDescriptions,
+    percentageAdvanceOfOptimizedMetaData,
+    noDataOfOptimizedProductsYet,
+    noDataOfDescriptionsYet,
+    noDataOfMetaDataYet,
+  } = await getShopMetrics({ shopId })
 
   return Response.json({
-    
+    countOfProducts,
+    countOfOptimizedProducts,
+    countOfOptimizedDescriptions,
+    countOfOptimizedMetaData,
+    percentageAdvanceOfOptimizedProducts,
+    percentageAdvanceOfOptimizedDescriptions,
+    percentageAdvanceOfOptimizedMetaData,
+    noDataOfOptimizedProductsYet,
+    noDataOfDescriptionsYet,
+    noDataOfMetaDataYet,
   },
     { status: 200 });
 };
 
 export default function Index() {
   const data: Data = useLoaderData();
+
+  const { countOfProducts,
+    countOfOptimizedProducts,
+    countOfOptimizedDescriptions,
+    countOfOptimizedMetaData,
+    percentageAdvanceOfOptimizedProducts,
+    percentageAdvanceOfOptimizedDescriptions,
+    percentageAdvanceOfOptimizedMetaData,
+    noDataOfOptimizedProductsYet,
+    noDataOfDescriptionsYet,
+    noDataOfMetaDataYet,
+  } = data;
 
 
   //   const shopify = useAppBridge();
@@ -52,8 +110,9 @@ export default function Index() {
     <Page>
 
       <Box paddingBlockEnd='200'>
-        <Text as={"h1"} variant="heading3xl" fontWeight="bold" children="Dashboard"></Text>
+        <Text as={"h1"} variant="heading2xl" fontWeight="bold" children="Dashboard"></Text>
       </Box>
+
       <Box paddingBlockEnd='300'>
         <Text as={"h2"} variant="headingMd" fontWeight='regular' children={`Welcome to ZionSEO`} />
       </Box>
@@ -65,75 +124,169 @@ export default function Index() {
             <Box paddingBlockEnd='400'>
               <Text as={"h3"} variant="headingLg" fontWeight='bold' children={`Store Information`} />
             </Box>
-
             <InlineGrid gap="400" columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}>
               <div style={{ minWidth: '25%', maxWidth: '100%' }}>
                 <Card >
-                  <BlockStack gap="300">
+                  <BlockStack gap="200">
                     <Text as="h4" variant="headingMd" fontWeight="semibold">
                       Products
                     </Text>
-                    <Box>
-                      <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        10
-                      </Text>
-                      <Text as="p" variant="bodyMd" >
-                        Total Products
-                      </Text>
-                    </Box>
+                    <Text as="h5" variant="headingLg" fontWeight='bold'>
+                      {countOfProducts}
+                    </Text>
+                    <Text as="p" variant="bodyMd" >
+                      Total Products
+                    </Text>
                   </BlockStack>
                 </Card>
               </div>
 
               <div style={{ minWidth: '25%', maxWidth: '100%' }}>
                 <Card >
-                  <BlockStack gap="300">
+                  <BlockStack gap="200">
                     <Text as="h4" variant="headingMd" fontWeight="semibold">
                       Optimized Products
                     </Text>
-                    <Box>
+                    <InlineStack blockAlign='center' gap="200">
                       <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        10
+                        {countOfOptimizedProducts}
                       </Text>
-                      <Text as="p" variant="bodyMd" >
-                        Total Optimized Products
-                      </Text>
-                    </Box>
+                      <InlineStack blockAlign='center' gap="0">
+                        {noDataOfOptimizedProductsYet
+                          ? 
+                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
+                              No data yet
+                            </Text>
+                          : <>
+                            <div style={{ width: 20, height: 20, }}>
+                              {percentageAdvanceOfOptimizedProducts < 0
+                                ? <Icon source={ArrowDownIcon} tone='critical' />
+                                : <Icon source={ArrowUpIcon} tone='success' />
+                              }
+                            </div>
+                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
+                              {percentageAdvanceOfOptimizedProducts < 0
+                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
+                                    {Math.floor(percentageAdvanceOfOptimizedProducts)}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
+                                    {percentageAdvanceOfOptimizedProducts}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                              }
+                            </Text>
+                          </>
+                        }
+                      </InlineStack>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" >
+                      Total Optimized Products
+                    </Text>
                   </BlockStack>
                 </Card>
               </div>
 
               <div style={{ minWidth: '25%', maxWidth: '100%' }}>
                 <Card >
-                  <BlockStack gap="300">
+                  <BlockStack gap="200">
                     <Text as="h4" variant="headingMd" fontWeight="semibold">
                       Optimized Descriptions
                     </Text>
-                    <Box>
+                    <InlineStack blockAlign='center' gap="200">
                       <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        10
+                        {countOfOptimizedDescriptions}
                       </Text>
-                      <Text as="p" variant="bodyMd" >
-                        Total Optimized  Descriptions
-                      </Text>
-                    </Box>
+                      <InlineStack blockAlign='center' gap="0">
+                        {noDataOfDescriptionsYet
+                          ? 
+                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
+                              No data yet
+                            </Text>
+                          : <>
+                            <div style={{ width: 20, height: 20, }}>
+                              {percentageAdvanceOfOptimizedDescriptions < 0
+                                ? <Icon source={ArrowDownIcon} tone='critical' />
+                                : <Icon source={ArrowUpIcon} tone='success' />
+                              }
+                            </div>
+                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
+                              {percentageAdvanceOfOptimizedDescriptions < 0
+                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
+                                    {Math.floor(percentageAdvanceOfOptimizedDescriptions)}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
+                                    {percentageAdvanceOfOptimizedDescriptions}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                              }
+                            </Text>
+                          </>
+                        }
+                      </InlineStack>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" >
+                      Total Optimized  Descriptions
+                    </Text>
                   </BlockStack>
                 </Card>
               </div>
+
               <div style={{ minWidth: '25%', maxWidth: '100%' }}>
                 <Card >
-                  <BlockStack gap="300">
+                  <BlockStack gap="200">
                     <Text as="h4" variant="headingMd" fontWeight="semibold">
                       Optimized Meta Data
                     </Text>
-                    <Box>
+                    <InlineStack blockAlign='center' gap="200">
                       <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        10
+                        {countOfOptimizedMetaData}
                       </Text>
-                      <Text as="p" variant="bodyMd" >
-                        Total Optimized Meta Data
-                      </Text>
-                    </Box>
+                      <InlineStack blockAlign='center' gap="0">
+                        {noDataOfMetaDataYet
+                          ? 
+                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
+                              No data yet
+                            </Text>
+                          : <>
+                            <div style={{ width: 20, height: 20, }}>
+                              {percentageAdvanceOfOptimizedMetaData < 0
+                                ? <Icon source={ArrowDownIcon} tone='critical' />
+                                : <Icon source={ArrowUpIcon} tone='success' />
+                              }
+                            </div>
+                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
+                              {percentageAdvanceOfOptimizedMetaData < 0
+                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
+                                    {Math.floor(percentageAdvanceOfOptimizedMetaData)}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
+                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
+                                    {percentageAdvanceOfOptimizedMetaData}%
+                                  </Text>
+                                  &nbsp;last week
+                                </Text>
+                              }
+                            </Text>
+                          </>
+                        }
+                      </InlineStack>
+                    </InlineStack>
+                    <Text as="p" variant="bodyMd" >
+                      Total Optimized Meta Data
+                    </Text>
                   </BlockStack>
                 </Card>
               </div>
@@ -157,7 +310,7 @@ export default function Index() {
                 </div>
 
                 <Button
-                  primary
+                  variant='primary'
                   onClick={() => {
                     window.location.reload();
                   }}>
@@ -203,7 +356,7 @@ export default function Index() {
                           </Button>
                         </Link>
                       </div>
-                      
+
                     </BlockStack>
                   </BlockStack>
                 </Card>
@@ -227,7 +380,7 @@ export default function Index() {
                           </Button>
                         </Link>
                       </div>
-                      
+
                     </BlockStack>
                   </BlockStack>
                 </Card>

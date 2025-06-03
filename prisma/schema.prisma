@@ -57,6 +57,7 @@ model Product {
   generatedDescription String?
   generatedMetaTitle String?
   generatedMetaDescription String?
+  isOptimized Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
