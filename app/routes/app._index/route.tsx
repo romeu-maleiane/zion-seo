@@ -1,7 +1,4 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
-import { useLoaderData, } from "@remix-run/react";
-import { ArrowUpIcon, ArrowDownIcon } from '@shopify/polaris-icons';
-
 import {
   Page,
   Layout,
@@ -11,15 +8,18 @@ import {
   BlockStack,
   Box,
   Link,
-  InlineStack,
   InlineGrid,
-  ProgressBar,
-  Icon,
 } from "@shopify/polaris";
 import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
-import { getShopMetrics } from "app/utils/getShoMetrics.server";
-
+import { createOrUpdateShop } from "app/models/createOrUpdadeShop.server"
+import { GraphqlQueryError } from '@shopify/shopify-api';
+import StoreInformationComponent from "app/Components/storeInformation.component";
+import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server";
+import CardAiSeoOptimizer from "app/Components/cardAiSeoOptimizer";
+import { getShopMetrics } from "app/models/getShoMetrics.server";
+import { useLoaderData } from "@remix-run/react";
+import prisma from "app/db.server";
 
 type Data = {
   countOfProducts: number;
@@ -32,54 +32,155 @@ type Data = {
   noDataOfOptimizedProductsYet?: boolean;
   noDataOfDescriptionsYet?: boolean;
   noDataOfMetaDataYet?: boolean;
+  activePlan: string | null;
+  aiCredits: number | null;
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
-  const response = await admin.graphql(
-    `#graphql
-  query shopInfo {
-    shop {
-      id
+  try {
+    const shop = await admin.graphql(
+      `#graphql
+      query shopInfo {
+        shop {
+          id
+          name
+          primaryDomain {
+            host
+          }
+          email
+        }
+      }`,
+    );
+
+    const shopData = await shop.json()
+
+    const { createdOrUpdatedStore } = await createOrUpdateShop({
+      id: shopData.data.shop.id,
+      name: shopData.data.shop.name,
+      email: shopData.data.shop.email,
+      domain: shopData.data.shop.primaryDomain.host
+    }).then(response => response.json())
+
+    let products;
+
+    if (createdOrUpdatedStore.activePlan === 'free') {
+      products = await admin.graphql(
+        `#graphql
+        query GetFirst250Products {
+          products(first: 25 ) {
+            edges {
+              cursor
+              node {
+                id                
+                title             
+                description
+                createdAt       
+                seo {
+                  title           
+                  description     
+                }
+                featuredMedia {
+                  mediaContentType
+                  ...on MediaImage {
+                    image {
+                      url
+                    }
+                  }           
+                }
+              }
+            }
+          }
+        }`,
+      )
+
+    } else {
+      products = await admin.graphql(
+        `#graphql
+        query GetFirst250Products {
+          products( first: 250 ) {
+            edges {
+              cursor
+              node {
+                id                
+                title             
+                description
+                createdAt       
+                seo {
+                  title           
+                  description     
+                }
+                featuredMedia {
+                  mediaContentType
+                  ... on MediaImage {
+                    image {
+                      url
+                    }
+                  }            
+                }
+              }
+            }
+          }
+        }`,
+      )
     }
-  }`,
-  );
 
-  const data = await response.json()
+    const productsData = await products.json()
 
-  const shopId: string = data.data.shop.id
+    await createOrUpdateProducts(productsData.data.products.edges, shopData.data.shop.id)
 
-  const {
-    countOfProducts,
-    countOfOptimizedProducts,
-    countOfOptimizedDescriptions,
-    countOfOptimizedMetaData,
-    percentageAdvanceOfOptimizedProducts,
-    percentageAdvanceOfOptimizedDescriptions,
-    percentageAdvanceOfOptimizedMetaData,
-    noDataOfOptimizedProductsYet,
-    noDataOfDescriptionsYet,
-    noDataOfMetaDataYet,
-  } = await getShopMetrics({ shopId })
+    const {
+      countOfProducts,
+      countOfOptimizedProducts,
+      countOfOptimizedDescriptions,
+      countOfOptimizedMetaData,
+      percentageAdvanceOfOptimizedProducts,
+      percentageAdvanceOfOptimizedDescriptions,
+      percentageAdvanceOfOptimizedMetaData,
+      noDataOfOptimizedProductsYet,
+      noDataOfDescriptionsYet,
+      noDataOfMetaDataYet,
+    } = await getShopMetrics({ shopId: shopData.data.shop.id })
 
-  return Response.json({
-    countOfProducts,
-    countOfOptimizedProducts,
-    countOfOptimizedDescriptions,
-    countOfOptimizedMetaData,
-    percentageAdvanceOfOptimizedProducts,
-    percentageAdvanceOfOptimizedDescriptions,
-    percentageAdvanceOfOptimizedMetaData,
-    noDataOfOptimizedProductsYet,
-    noDataOfDescriptionsYet,
-    noDataOfMetaDataYet,
-  },
-    { status: 200 });
-};
+    const storeBalance = await prisma.store.findUnique({
+      where: { storeId: shopData.data.shop.id },
+      select: {
+        activePlan: true,
+        aiCredits: true,
+      },
+    })
+
+    return Response.json({
+      countOfProducts,
+      countOfOptimizedProducts,
+      countOfOptimizedDescriptions,
+      countOfOptimizedMetaData,
+      percentageAdvanceOfOptimizedProducts,
+      percentageAdvanceOfOptimizedDescriptions,
+      percentageAdvanceOfOptimizedMetaData,
+      noDataOfOptimizedProductsYet,
+      noDataOfDescriptionsYet,
+      noDataOfMetaDataYet,
+      activePlan: storeBalance?.activePlan ,
+      aiCredits: storeBalance?.aiCredits
+    }, { status: 200 });
+
+  } catch (error) {
+    if (error instanceof GraphqlQueryError) {
+
+      return Response.json({ errors: error.body?.errors }, { status: 500 });
+    }
+    console.error('Dashboard Error: ', error)
+    return Response.json({ message: "An error occurred" }, { status: 500 });
+  }
+}
+
 
 export default function Index() {
-  const data: Data = useLoaderData();
+  const data: Data = useLoaderData()
+
+  console.log('Dashboard Data: ', data)
 
   const { countOfProducts,
     countOfOptimizedProducts,
@@ -91,8 +192,8 @@ export default function Index() {
     noDataOfOptimizedProductsYet,
     noDataOfDescriptionsYet,
     noDataOfMetaDataYet,
-  } = data;
-
+    activePlan,
+    aiCredits } = data
 
   //   const shopify = useAppBridge();
   //   const isLoading =
@@ -120,215 +221,21 @@ export default function Index() {
       <Layout>
 
         <Layout.Section>
-          <Card >
-            <Box paddingBlockEnd='400'>
-              <Text as={"h3"} variant="headingLg" fontWeight='bold' children={`Store Information`} />
-            </Box>
-            <InlineGrid gap="400" columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}>
-              <div style={{ minWidth: '25%', maxWidth: '100%' }}>
-                <Card >
-                  <BlockStack gap="200">
-                    <Text as="h4" variant="headingMd" fontWeight="semibold">
-                      Products
-                    </Text>
-                    <Text as="h5" variant="headingLg" fontWeight='bold'>
-                      {countOfProducts}
-                    </Text>
-                    <Text as="p" variant="bodyMd" >
-                      Total Products
-                    </Text>
-                  </BlockStack>
-                </Card>
-              </div>
-
-              <div style={{ minWidth: '25%', maxWidth: '100%' }}>
-                <Card >
-                  <BlockStack gap="200">
-                    <Text as="h4" variant="headingMd" fontWeight="semibold">
-                      Optimized Products
-                    </Text>
-                    <InlineStack blockAlign='center' gap="200">
-                      <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        {countOfOptimizedProducts}
-                      </Text>
-                      <InlineStack blockAlign='center' gap="0">
-                        {noDataOfOptimizedProductsYet
-                          ? 
-                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                              No data yet
-                            </Text>
-                          : <>
-                            <div style={{ width: 20, height: 20, }}>
-                              {percentageAdvanceOfOptimizedProducts < 0
-                                ? <Icon source={ArrowDownIcon} tone='critical' />
-                                : <Icon source={ArrowUpIcon} tone='success' />
-                              }
-                            </div>
-                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
-                              {percentageAdvanceOfOptimizedProducts < 0
-                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
-                                    {Math.floor(percentageAdvanceOfOptimizedProducts)}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
-                                    {percentageAdvanceOfOptimizedProducts}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                              }
-                            </Text>
-                          </>
-                        }
-                      </InlineStack>
-                    </InlineStack>
-                    <Text as="p" variant="bodyMd" >
-                      Total Optimized Products
-                    </Text>
-                  </BlockStack>
-                </Card>
-              </div>
-
-              <div style={{ minWidth: '25%', maxWidth: '100%' }}>
-                <Card >
-                  <BlockStack gap="200">
-                    <Text as="h4" variant="headingMd" fontWeight="semibold">
-                      Optimized Descriptions
-                    </Text>
-                    <InlineStack blockAlign='center' gap="200">
-                      <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        {countOfOptimizedDescriptions}
-                      </Text>
-                      <InlineStack blockAlign='center' gap="0">
-                        {noDataOfDescriptionsYet
-                          ? 
-                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                              No data yet
-                            </Text>
-                          : <>
-                            <div style={{ width: 20, height: 20, }}>
-                              {percentageAdvanceOfOptimizedDescriptions < 0
-                                ? <Icon source={ArrowDownIcon} tone='critical' />
-                                : <Icon source={ArrowUpIcon} tone='success' />
-                              }
-                            </div>
-                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
-                              {percentageAdvanceOfOptimizedDescriptions < 0
-                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
-                                    {Math.floor(percentageAdvanceOfOptimizedDescriptions)}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
-                                    {percentageAdvanceOfOptimizedDescriptions}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                              }
-                            </Text>
-                          </>
-                        }
-                      </InlineStack>
-                    </InlineStack>
-                    <Text as="p" variant="bodyMd" >
-                      Total Optimized  Descriptions
-                    </Text>
-                  </BlockStack>
-                </Card>
-              </div>
-
-              <div style={{ minWidth: '25%', maxWidth: '100%' }}>
-                <Card >
-                  <BlockStack gap="200">
-                    <Text as="h4" variant="headingMd" fontWeight="semibold">
-                      Optimized Meta Data
-                    </Text>
-                    <InlineStack blockAlign='center' gap="200">
-                      <Text as="h5" variant="headingLg" fontWeight='bold'>
-                        {countOfOptimizedMetaData}
-                      </Text>
-                      <InlineStack blockAlign='center' gap="0">
-                        {noDataOfMetaDataYet
-                          ? 
-                            <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                              No data yet
-                            </Text>
-                          : <>
-                            <div style={{ width: 20, height: 20, }}>
-                              {percentageAdvanceOfOptimizedMetaData < 0
-                                ? <Icon source={ArrowDownIcon} tone='critical' />
-                                : <Icon source={ArrowUpIcon} tone='success' />
-                              }
-                            </div>
-                            <Text as="span" variant="bodyMd" fontWeight='regular' tone="subdued">
-                              {percentageAdvanceOfOptimizedMetaData < 0
-                                ? <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='critical' variant="bodyLg" fontWeight='semibold'>
-                                    {Math.floor(percentageAdvanceOfOptimizedMetaData)}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                                : <Text as='span' tone="subdued" variant="bodyMd" fontWeight='regular'>
-                                  <Text as='span' tone='success' variant="bodyLg" fontWeight='semibold'>
-                                    {percentageAdvanceOfOptimizedMetaData}%
-                                  </Text>
-                                  &nbsp;last week
-                                </Text>
-                              }
-                            </Text>
-                          </>
-                        }
-                      </InlineStack>
-                    </InlineStack>
-                    <Text as="p" variant="bodyMd" >
-                      Total Optimized Meta Data
-                    </Text>
-                  </BlockStack>
-                </Card>
-              </div>
-
-            </InlineGrid>
-          </Card>
+          <StoreInformationComponent countOfProducts={countOfProducts}
+            countOfOptimizedProducts={countOfOptimizedProducts}
+            countOfOptimizedDescriptions={countOfOptimizedDescriptions}
+            countOfOptimizedMetaData={countOfOptimizedMetaData}
+            percentageAdvanceOfOptimizedProducts={percentageAdvanceOfOptimizedProducts}
+            percentageAdvanceOfOptimizedDescriptions={percentageAdvanceOfOptimizedDescriptions}
+            percentageAdvanceOfOptimizedMetaData={percentageAdvanceOfOptimizedMetaData}
+            noDataOfOptimizedProductsYet={noDataOfOptimizedProductsYet}
+            noDataOfDescriptionsYet={noDataOfDescriptionsYet}
+            noDataOfMetaDataYet={noDataOfMetaDataYet}
+          />
         </Layout.Section>
 
         <Layout.Section>
-          <Card >
-            <BlockStack gap="200">
-              <InlineStack align='space-between' blockAlign='start'>
-
-                <div>
-                  <Text as="h3" variant="headingSm" fontWeight="bold">
-                    AI SEO Optimizer
-                  </Text>
-                  <Text as='p' variant="bodyMd" fontWeight='regular'>
-                    (20 AI credits)
-                  </Text>
-                </div>
-
-                <Button
-                  variant='primary'
-                  onClick={() => {
-                    window.location.reload();
-                  }}>
-                  Increase limit
-                </Button>
-              </InlineStack>
-
-              <div>
-                <Text as='p' variant="bodyMd" fontWeight='regular'>
-                  0/20 Credits
-                </Text>
-
-                <div style={{ width: '100%' }}>
-                  <ProgressBar progress={75} size='small' />
-                </div>
-              </div>
-            </BlockStack>
-          </Card>
+          <CardAiSeoOptimizer activePlan={activePlan} aiCredits={aiCredits}/>
         </Layout.Section>
 
         <Layout.Section>

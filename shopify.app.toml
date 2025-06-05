@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://jacket-newton-neural-population.trycloudflare.com"
+application_url = "https://gods-sentence-planners-football.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://jacket-newton-neural-population.trycloudflare.com/auth/callback",
-  "https://jacket-newton-neural-population.trycloudflare.com/auth/shopify/callback",
-  "https://jacket-newton-neural-population.trycloudflare.com/api/auth/callback"
+  "https://gods-sentence-planners-football.trycloudflare.com/auth/callback",
+  "https://gods-sentence-planners-football.trycloudflare.com/auth/shopify/callback",
+  "https://gods-sentence-planners-football.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
