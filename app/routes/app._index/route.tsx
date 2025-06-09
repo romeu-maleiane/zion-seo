@@ -257,7 +257,7 @@ export default function Index() {
                       </Text>
 
                       <div style={{ width: 225 }}>
-                        <Link url='/optimize-product-description'>
+                        <Link url='/app/optimize-product-description'>
                           <Button >
                             Optimize description
                           </Button>
@@ -281,7 +281,7 @@ export default function Index() {
                       </Text>
 
                       <div style={{ width: 225 }}>
-                        <Link url='/optimize-meta-data'>
+                        <Link url='/app/optimize-meta-data'>
                           <Button >
                             Optimize meta data
                           </Button>

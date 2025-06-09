@@ -1,4 +1,4 @@
-import { BlockStack, Text, Button, Card, InlineStack, ProgressBar } from '@shopify/polaris';
+import { BlockStack, Text, Button, Card, InlineStack, ProgressBar, Box } from '@shopify/polaris';
 
 
 interface CardAiSeoOptimizerType {
@@ -42,7 +42,7 @@ function CardAiSeoOptimizer({ activePlan, aiCredits }: CardAiSeoOptimizerType ) 
                     </Button>
                 </InlineStack>
 
-                <div>
+                <BlockStack gap="100">
                     <Text as='p' variant="bodyMd" fontWeight='regular'>
                         {usedCredits}/{activePlan === 'free' ? '20' : '3000'} Credits
                     </Text>
@@ -50,7 +50,7 @@ function CardAiSeoOptimizer({ activePlan, aiCredits }: CardAiSeoOptimizerType ) 
                     <div style={{ width: '100%' }}>
                         <ProgressBar progress={Math.floor(progressPercentage)} size='small' />
                     </div>
-                </div>
+                </BlockStack>
             </BlockStack>
         </Card>
     )
