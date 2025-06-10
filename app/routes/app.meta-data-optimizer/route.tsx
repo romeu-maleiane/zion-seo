@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
-import { Badge, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, RangeSlider, Text, TextField, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
+import { Badge, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, RangeSlider, TextField, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
 import CardAiSeoOptimizer from 'app/Components/cardAiSeoOptimizer'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
     ComposeIcon
 } from '@shopify/polaris-icons';
@@ -11,18 +11,32 @@ import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
 import { useLoaderData } from "@remix-run/react";
 import { formatDate } from "app/utils/formateDate";
+import Footer from "app/Components/footer.component";
 
 type Data = {
-    products: {
+    productsData: {
         productId: string;
         productImage: string | null;
         title: string;
         currentMetaTitle: string;
         currentMetaDescription: string;
-        generatedDescription: string;
-        generatedMetaTitle: string;
-        createdAt: string;
+        generatedDescription: string | null;
+        generatedMetaTitle: string | null;
+        createdAt: Date | string;
     }[]
+    storeId: string;
+}
+
+type Product = {
+    productId: string;
+    productImage: string | null;
+    title: string;
+    currentMetaTitle: string;
+    currentMetaDescription: string;
+    generatedDescription: string | null;
+    generatedMetaTitle: string | null;
+    createdAt: Date | string;
+
 }
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { admin } = await authenticate.admin(request);
@@ -39,7 +53,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
         const shopData = await shop.json()
 
-        const products = await prisma.product.findMany({
+        const productsData = await prisma.product.findMany({
+            take: 15,
             where: { storeId: shopData.data.shop.id },
             select: {
                 productId: true,
@@ -52,11 +67,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 createdAt: true,
             }
         })
-        
-        console.log('products; ', products )
-        
 
-        return Response.json({  products  }, { status: 200 })
+
+
+        return Response.json({ productsData, storeId: shopData.data.shop.id }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
 
@@ -71,7 +85,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 function MetaDataOptimizerPage() {
     const data: Data = useLoaderData();
-    const { products } = data;
+    const { productsData } = data;
+    const [products, setProducts] = useState<Array<Product>>(productsData)
+    const [page, setPage] = useState(0)
+    const [hasNextPage, setHasNextPage] = useState(products.length === 15)
+    const [loading, setLoading] = useState(false)
+    const [rowMarkup, setRowMarkup] = useState<Array<JSX.Element> | null>(null)
     const { mode, setMode } = useSetIndexFiltersMode();
     const onHandleCancel = () => { };
 
@@ -204,106 +223,137 @@ function MetaDataOptimizerPage() {
         });
     }
 
-    const orders = [
-        {
-            id: '1020',
-            order: (
-                <Text as="span" variant="bodyMd" fontWeight="semibold">
-                    #1020
-                </Text>
-            ),
-            date: 'Jul 20 at 4:34pm',
-            customer: 'Jaydon Stanton',
-            total: '$969.44',
-            paymentStatus: <Badge progress="complete">Paid</Badge>,
-            fulfillmentStatus: <Badge progress="incomplete">Unfulfilled</Badge>,
-        },
-        {
-            id: '1019',
-            order: (
-                <Text as="span" variant="bodyMd" fontWeight="semibold">
-                    #1019
-                </Text>
-            ),
-            date: 'Jul 20 at 3:46pm',
-            customer: 'Ruben Westerfelt',
-            total: '$701.19',
-            paymentStatus: <Badge progress="partiallyComplete">Partially paid</Badge>,
-            fulfillmentStatus: <Badge progress="incomplete">Unfulfilled</Badge>,
-        },
-        {
-            id: '1018',
-            order: (
-                <Text as="span" variant="bodyMd" fontWeight="semibold">
-                    #1018
-                </Text>
-            ),
-            date: 'Jul 20 at 3.44pm',
-            customer: 'Leo Carder',
-            total: '$798.24',
-            paymentStatus: <Badge progress="complete">Paid</Badge>,
-            fulfillmentStatus: <Badge progress="incomplete">Unfulfilled</Badge>,
-        },
-    ];
-    const resourceName = {
-        singular: 'order',
-        plural: 'orders',
-    };
+    const handleChangePage = async (nextPage: number) => {
+        try {
+            setLoading(true)
+            const storeId = data.storeId.replace('gid://shopify/Shop/', '');
+            const result = await fetch(`/app/api/getproducts/${storeId}/${nextPage}`)
 
+            const fetchData = await result.json()
 
-    const rowMarkup = Array.from(products).map(
-        (
-            { productId,
-                productImage,
-                title,
-                currentMetaTitle,
-                currentMetaDescription,
-                generatedDescription,
-                generatedMetaTitle,
-                createdAt },
-            index,
-        ) => (
-            <IndexTable.Row
-                id={productId}
-                key={productId}
-                position={index}
-            >
-                <IndexTable.Cell>
-                    <Thumbnail
-                        source={productImage || ''}
-                        size="small"
-                        alt='Product image'
-                    />
-                </IndexTable.Cell>
-                <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
-                <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
-                <IndexTable.Cell>
-                    {currentMetaDescription || '—'}
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    {generatedDescription && generatedMetaTitle 
-                        ? <Badge tone='success'>Optimized</Badge> 
-                        : <Badge>Not optimized</Badge>
-                    }
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    {formatDate(createdAt)}
-                </IndexTable.Cell>
-                <IndexTable.Cell>
-                    <InlineStack blockAlign='center' align='center' >
-                        <Link url={`/app/optimize-meta-data/${productId}`}>
-                            <div style={{ width: '20px', height: '20px' }}>
-                                <Icon
-                                    source={ComposeIcon}
-                                    tone="base"
-                                />
-                            </div>
-                        </Link>
-                    </InlineStack>
-                </IndexTable.Cell>
-            </IndexTable.Row>
-        ),
-    );
+            setHasNextPage(fetchData?.hasNextPage)
+            setProducts(fetchData?.products)
+            setRowMarkup(Array.from(products).map(
+                (
+                    { productId,
+                        productImage,
+                        title,
+                        currentMetaTitle,
+                        currentMetaDescription,
+                        generatedDescription,
+                        generatedMetaTitle,
+                        createdAt },
+                    index,
+                ) => (
+                    <IndexTable.Row
+                        id={productId}
+                        key={productId}
+                        position={index}
+                    >
+                        <IndexTable.Cell>
+                            <Thumbnail
+                                source={productImage || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png"}
+                                size="small"
+                                alt='Product image'
+                            />
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
+                        <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {currentMetaDescription || '—'}
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {generatedDescription && generatedMetaTitle
+                                ? <Badge tone='success'>Optimized</Badge>
+                                : <Badge>Not optimized</Badge>
+                            }
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {formatDate(createdAt)}
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            <InlineStack blockAlign='center' align='center' >
+                                <Link url={`/app/optimize-meta-data/${productId}`}>
+                                    <div style={{ width: '20px', height: '20px' }}>
+                                        <Icon
+                                            source={ComposeIcon}
+                                            tone="base"
+                                        />
+                                    </div>
+                                </Link>
+                            </InlineStack>
+                        </IndexTable.Cell>
+                    </IndexTable.Row>
+                ),
+            ))
+            setLoading(false)
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            setLoading(false);
+            return;
+
+        }
+    }
+
+    useEffect(() => {
+        (() => {
+            setRowMarkup(Array.from(products).map(
+                (
+                    { productId,
+                        productImage,
+                        title,
+                        currentMetaTitle,
+                        currentMetaDescription,
+                        generatedDescription,
+                        generatedMetaTitle,
+                        createdAt },
+                    index,
+                ) => (
+                    <IndexTable.Row
+                        id={productId}
+                        key={productId}
+                        position={index}
+                    >
+                        <IndexTable.Cell>
+                            <Thumbnail
+                                source={productImage || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png"}
+                                size="small"
+                                alt='Product image'
+                            />
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
+                        <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {currentMetaDescription || '—'}
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {generatedDescription && generatedMetaTitle
+                                ? <Badge tone='success'>Optimized</Badge>
+                                : <Badge>Not optimized</Badge>
+                            }
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            {formatDate(createdAt)}
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            <InlineStack blockAlign='center' align='center' >
+                                <Link url={`/app/optimize-meta-data/${productId}`}>
+                                    <div style={{ width: '20px', height: '20px' }}>
+                                        <Icon
+                                            source={ComposeIcon}
+                                            tone="base"
+                                        />
+                                    </div>
+                                </Link>
+                            </InlineStack>
+                        </IndexTable.Cell>
+                    </IndexTable.Row>
+                ),
+            ))
+        })()
+
+    }, [products])
+
     return (
         <Frame>
             <Page
@@ -337,8 +387,7 @@ function MetaDataOptimizerPage() {
                         />
                         <IndexTable
                             condensed={useBreakpoints().smDown}
-                            resourceName={resourceName}
-                            itemCount={orders.length}
+                            itemCount={products.length}
                             headings={[
                                 { title: '' },
                                 { title: 'Product name' },
@@ -349,13 +398,31 @@ function MetaDataOptimizerPage() {
                                 { title: 'Action', alignment: 'center' },
                             ]}
                             pagination={{
-                                hasNext: true,
-                                onNext: () => { },
+                                hasNext: hasNextPage,
+                                onNext: () => {
+                                    setPage(currentPage => {
+                                        const newPage = currentPage + 1
+                                        handleChangePage(newPage)
+                                        return newPage
+                                    })
+                                },
+                                hasPrevious: page !== 0,
+                                onPrevious: () => {
+                                    setPage(currentPage => {
+                                        const newPage = currentPage - 1
+                                        handleChangePage(newPage)
+                                        return newPage
+                                    })
+                                }
                             }}
+                            loading={loading}
                         >
                             {rowMarkup}
                         </IndexTable>
-
+                    </Layout.Section>
+                    
+                    <Layout.Section>
+                        <Footer />
                     </Layout.Section>
                 </Layout>
             </Page>

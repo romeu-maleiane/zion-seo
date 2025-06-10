@@ -180,7 +180,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function Index() {
   const data: Data = useLoaderData()
 
-  console.log('Dashboard Data: ', data)
 
   const { countOfProducts,
     countOfOptimizedProducts,

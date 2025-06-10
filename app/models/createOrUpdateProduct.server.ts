@@ -26,7 +26,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
 
             const productImage = product?.node?.featuredMedia?.image?.url
                 ? product.node.featuredMedia.image.url
-                : 'https://cdn.shopify.com/s/files/1/0750/6267/7113/files/no-image.png?v=1735686462';
+                : 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png';
 
             const metaTitle = product.node?.seo?.title 
                 ? product.node.seo.title : '';
