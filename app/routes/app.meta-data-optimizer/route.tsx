@@ -12,6 +12,7 @@ import prisma from "app/db.server";
 import { useLoaderData } from "@remix-run/react";
 import { formatDate } from "app/utils/formateDate";
 import Footer from "app/Components/footer.component";
+import { useDebounce } from "app/hook/useDebounce";
 
 type Data = {
     productsData: {
@@ -25,6 +26,8 @@ type Data = {
         createdAt: Date | string;
     }[]
     storeId: string;
+    activePlan: string | null;
+    aiCredits: number | null;
 }
 
 type Product = {
@@ -68,9 +71,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             }
         })
 
+        const storeBalance = await prisma.store.findUnique({
+            where: { storeId: shopData.data.shop.id },
+            select: {
+                activePlan: true,
+                aiCredits: true,
+            },
+        })
 
 
-        return Response.json({ productsData, storeId: shopData.data.shop.id }, { status: 200 })
+        return Response.json({ productsData, storeId: shopData.data.shop.id, activePlan: storeBalance?.activePlan,  aiCredits: storeBalance?.aiCredits }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
 
@@ -85,14 +95,19 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 function MetaDataOptimizerPage() {
     const data: Data = useLoaderData();
-    const { productsData } = data;
+    const { productsData, activePlan, aiCredits } = data;
     const [products, setProducts] = useState<Array<Product>>(productsData)
     const [page, setPage] = useState(0)
     const [hasNextPage, setHasNextPage] = useState(products.length === 15)
     const [loading, setLoading] = useState(false)
+    const [searchLoading, setSearchLoading] = useState(false)
     const [rowMarkup, setRowMarkup] = useState<Array<JSX.Element> | null>(null)
     const { mode, setMode } = useSetIndexFiltersMode();
-    const onHandleCancel = () => { };
+    const onHandleCancel = () => {
+        setQueryValue('')
+        setPage(0)
+        handleGetNextProducts(0)
+    };
 
 
 
@@ -104,6 +119,7 @@ function MetaDataOptimizerPage() {
     );
     const [taggedWith, setTaggedWith] = useState('');
     const [queryValue, setQueryValue] = useState('');
+    const debouncedQuery = useDebounce(queryValue, 1000)
 
     const handleAccountStatusChange = useCallback(
         (value: string[]) => setAccountStatus(value),
@@ -115,10 +131,6 @@ function MetaDataOptimizerPage() {
     );
     const handleTaggedWithChange = useCallback(
         (value: string) => setTaggedWith(value),
-        [],
-    );
-    const handleFiltersQueryChange = useCallback(
-        (value: string) => setQueryValue(value),
         [],
     );
     const handleAccountStatusRemove = useCallback(
@@ -223,69 +235,16 @@ function MetaDataOptimizerPage() {
         });
     }
 
-    const handleChangePage = async (nextPage: number) => {
+    const handleGetNextProducts = useCallback(async (nextPage: number, query: string = '') => {
         try {
             setLoading(true)
             const storeId = data.storeId.replace('gid://shopify/Shop/', '');
-            const result = await fetch(`/app/api/getproducts/${storeId}/${nextPage}`)
+            const result = await fetch(`/app/api/getproducts/${storeId}/${nextPage}?search=${query}`)
 
             const fetchData = await result.json()
 
             setHasNextPage(fetchData?.hasNextPage)
             setProducts(fetchData?.products)
-            setRowMarkup(Array.from(products).map(
-                (
-                    { productId,
-                        productImage,
-                        title,
-                        currentMetaTitle,
-                        currentMetaDescription,
-                        generatedDescription,
-                        generatedMetaTitle,
-                        createdAt },
-                    index,
-                ) => (
-                    <IndexTable.Row
-                        id={productId}
-                        key={productId}
-                        position={index}
-                    >
-                        <IndexTable.Cell>
-                            <Thumbnail
-                                source={productImage || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png"}
-                                size="small"
-                                alt='Product image'
-                            />
-                        </IndexTable.Cell>
-                        <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
-                        <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
-                        <IndexTable.Cell>
-                            {currentMetaDescription || '—'}
-                        </IndexTable.Cell>
-                        <IndexTable.Cell>
-                            {generatedDescription && generatedMetaTitle
-                                ? <Badge tone='success'>Optimized</Badge>
-                                : <Badge>Not optimized</Badge>
-                            }
-                        </IndexTable.Cell>
-                        <IndexTable.Cell>
-                            {formatDate(createdAt)}
-                        </IndexTable.Cell>
-                        <IndexTable.Cell>
-                            <InlineStack blockAlign='center' align='center' >
-                                <Link url={`/app/optimize-meta-data/${productId}`}>
-                                    <div style={{ width: '20px', height: '20px' }}>
-                                        <Icon
-                                            source={ComposeIcon}
-                                            tone="base"
-                                        />
-                                    </div>
-                                </Link>
-                            </InlineStack>
-                        </IndexTable.Cell>
-                    </IndexTable.Row>
-                ),
-            ))
             setLoading(false)
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -293,7 +252,22 @@ function MetaDataOptimizerPage() {
             return;
 
         }
-    }
+    }, [data.storeId,])
+
+    const handleFiltersQueryChange = useCallback(
+        (value: string) => {
+            setQueryValue(value)
+        },
+        []
+    );
+
+    useEffect(() => {
+        setPage(0)
+        setSearchLoading(true)
+        handleGetNextProducts(0, debouncedQuery)
+        setSearchLoading(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedQuery])
 
     useEffect(() => {
         (() => {
@@ -337,7 +311,7 @@ function MetaDataOptimizerPage() {
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <InlineStack blockAlign='center' align='center' >
-                                <Link url={`/app/optimize-meta-data/${productId}`}>
+                                <Link url={`/app/optimize-meta-data/${productId.replace('gid://shopify/Product/', '')}`}>
                                     <div style={{ width: '20px', height: '20px' }}>
                                         <Icon
                                             source={ComposeIcon}
@@ -363,7 +337,7 @@ function MetaDataOptimizerPage() {
             >
                 <Layout>
                     <Layout.Section>
-                        <CardAiSeoOptimizer activePlan='free' aiCredits={12} />
+                        <CardAiSeoOptimizer activePlan={activePlan} aiCredits={aiCredits} />
                     </Layout.Section>
 
                     <Layout.Section>
@@ -384,6 +358,7 @@ function MetaDataOptimizerPage() {
                             onClearAll={handleFiltersClearAll}
                             mode={mode}
                             setMode={setMode}
+                            loading={searchLoading}
                         />
                         <IndexTable
                             condensed={useBreakpoints().smDown}
@@ -402,7 +377,7 @@ function MetaDataOptimizerPage() {
                                 onNext: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage + 1
-                                        handleChangePage(newPage)
+                                        handleGetNextProducts(newPage)
                                         return newPage
                                     })
                                 },
@@ -410,7 +385,7 @@ function MetaDataOptimizerPage() {
                                 onPrevious: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage - 1
-                                        handleChangePage(newPage)
+                                        handleGetNextProducts(newPage)
                                         return newPage
                                     })
                                 }
@@ -420,7 +395,7 @@ function MetaDataOptimizerPage() {
                             {rowMarkup}
                         </IndexTable>
                     </Layout.Section>
-                    
+
                     <Layout.Section>
                         <Footer />
                     </Layout.Section>

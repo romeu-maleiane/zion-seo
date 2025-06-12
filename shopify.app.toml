@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://tt-emerald-aberdeen-eligibility.trycloudflare.com"
+application_url = "https://gentleman-na-vertical-create.trycloudflare.com"
 embedded = true
 
 [build]
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://tt-emerald-aberdeen-eligibility.trycloudflare.com/auth/callback",
-  "https://tt-emerald-aberdeen-eligibility.trycloudflare.com/auth/shopify/callback",
-  "https://tt-emerald-aberdeen-eligibility.trycloudflare.com/api/auth/callback"
+  "https://gentleman-na-vertical-create.trycloudflare.com/auth/callback",
+  "https://gentleman-na-vertical-create.trycloudflare.com/auth/shopify/callback",
+  "https://gentleman-na-vertical-create.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

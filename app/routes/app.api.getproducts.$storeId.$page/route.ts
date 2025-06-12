@@ -2,15 +2,21 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import prisma from "app/db.server";
 
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
+export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     const { storeId, page } = params
     const completedStoreId = ('gid://shopify/Shop/').concat('',storeId || '')
     const pageSize = 15
 
+    const url = new URL(request.url);
+    const search = url.searchParams.get("search") || undefined;
+
     const result = await prisma.product.findMany({
         skip: parseInt(page || '1') * pageSize,
         take: pageSize + 1,
-        where: { storeId: completedStoreId },
+        where: { 
+            storeId: completedStoreId, 
+            title: search ? { search } : undefined
+        },
         select: {
             productId: true,
             productImage: true,
