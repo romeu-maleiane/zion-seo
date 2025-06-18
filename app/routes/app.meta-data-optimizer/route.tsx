@@ -11,6 +11,8 @@ import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
 import { useLoaderData } from "@remix-run/react";
 import { formatDate } from "app/utils/formateDate";
+import isEmpty from 'app/utils/isEmpty'
+import disambiguateLabel from 'app/utils/disambiguateLabel'
 import Footer from "app/Components/footer.component";
 import { useDebounce } from "app/hook/useDebounce";
 
@@ -41,6 +43,14 @@ type Product = {
     createdAt: Date | string;
 
 }
+
+interface handleGetNextProductsType {
+    nextPage: number
+    query?: string
+    onlyNotOptimizedProducts?: boolean
+    onlyOptimizedProducts?: boolean
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { admin } = await authenticate.admin(request);
 
@@ -80,7 +90,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         })
 
 
-        return Response.json({ productsData, storeId: shopData.data.shop.id, activePlan: storeBalance?.activePlan,  aiCredits: storeBalance?.aiCredits }, { status: 200 })
+        return Response.json({ productsData, storeId: shopData.data.shop.id, activePlan: storeBalance?.activePlan, aiCredits: storeBalance?.aiCredits }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
 
@@ -97,149 +107,108 @@ function MetaDataOptimizerPage() {
     const data: Data = useLoaderData();
     const { productsData, activePlan, aiCredits } = data;
     const [products, setProducts] = useState<Array<Product>>(productsData)
-    const [page, setPage] = useState(0)
-    const [hasNextPage, setHasNextPage] = useState(products.length === 15)
-    const [loading, setLoading] = useState(false)
-    const [searchLoading, setSearchLoading] = useState(false)
+    const [page, setPage] = useState<number>(0)
+    const [hasNextPage, setHasNextPage] = useState<boolean>(products.length === 15)
+    const [loading, setLoading] = useState<boolean>(false)
+    const [searchLoading, setSearchLoading] = useState<boolean>(false)
+    const [onlyOptimizedProducts, setOnlyOptimizedProducts] = useState<boolean>(false)
+    const [onlyNotOptimizedProducts, setOnlyNotOptimizedProducts] = useState<boolean>(false)
     const [rowMarkup, setRowMarkup] = useState<Array<JSX.Element> | null>(null)
     const { mode, setMode } = useSetIndexFiltersMode();
     const onHandleCancel = () => {
         setQueryValue('')
         setPage(0)
-        handleGetNextProducts(0)
+        handleGetNextProducts({nextPage: 0})
     };
 
 
-
-    const [accountStatus, setAccountStatus] = useState<string[] | undefined>(
-        undefined,
+    const [optimizeStatus, setOptimizeStatus] = useState<string[] | []>(
+        [],
     );
-    const [moneySpent, setMoneySpent] = useState<[number, number] | undefined>(
-        undefined,
-    );
-    const [taggedWith, setTaggedWith] = useState('');
     const [queryValue, setQueryValue] = useState('');
     const debouncedQuery = useDebounce(queryValue, 1000)
 
-    const handleAccountStatusChange = useCallback(
-        (value: string[]) => setAccountStatus(value),
+    const handleOptimizeStatusChange = useCallback(
+        (value: string[]) => {
+            setOptimizeStatus(value)
+            if (value[0] === 'optimized') {
+                setOnlyOptimizedProducts(true)
+                setOnlyNotOptimizedProducts(false)
+            }
+            else if (value[0] === 'not optimized') {
+                setOnlyNotOptimizedProducts(true)
+                setOnlyOptimizedProducts(false)
+            } else {
+                setOnlyOptimizedProducts(false)
+                setOnlyNotOptimizedProducts(false)
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
-    const handleMoneySpentChange = useCallback(
-        (value: [number, number]) => setMoneySpent(value),
+    const handleOptimizeStatusRemove = useCallback(
+        () => {
+            setOptimizeStatus([])
+            setOnlyOptimizedProducts(false)
+            setOnlyNotOptimizedProducts(false)
+            setPage(0)
+            setSearchLoading(true)
+            handleGetNextProducts({nextPage: 0, query: debouncedQuery, })
+            setSearchLoading(false)
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     );
-    const handleTaggedWithChange = useCallback(
-        (value: string) => setTaggedWith(value),
-        [],
-    );
-    const handleAccountStatusRemove = useCallback(
-        () => setAccountStatus(undefined),
-        [],
-    );
-    const handleMoneySpentRemove = useCallback(
-        () => setMoneySpent(undefined),
-        [],
-    );
-    const handleTaggedWithRemove = useCallback(() => setTaggedWith(''), []);
     const handleQueryValueRemove = useCallback(() => setQueryValue(''), []);
     const handleFiltersClearAll = useCallback(() => {
-        handleAccountStatusRemove();
-        handleMoneySpentRemove();
-        handleTaggedWithRemove();
+        handleOptimizeStatusRemove();
         handleQueryValueRemove();
     }, [
-        handleAccountStatusRemove,
-        handleMoneySpentRemove,
+        handleOptimizeStatusRemove,
         handleQueryValueRemove,
-        handleTaggedWithRemove,
     ]);
 
     const filters = [
         {
-            key: 'accountStatus',
-            label: 'Account status',
+            key: 'optimizeStatus',
+            label: 'Optimize status',
             filter: (
                 <ChoiceList
-                    title="Account status"
+                    title="Optimize status"
                     titleHidden
                     choices={[
-                        { label: 'Enabled', value: 'enabled' },
-                        { label: 'Not invited', value: 'not invited' },
-                        { label: 'Invited', value: 'invited' },
-                        { label: 'Declined', value: 'declined' },
+                        { label: 'Optimized', value: 'optimized' },
+                        { label: 'Not optimized', value: 'not optimized' },
                     ]}
-                    selected={accountStatus || []}
-                    onChange={handleAccountStatusChange}
-                    allowMultiple
+                    selected={optimizeStatus || []}
+                    onChange={handleOptimizeStatusChange}
                 />
             ),
             shortcut: true,
-        },
-        {
-            key: 'taggedWith',
-            label: 'Tagged with',
-            filter: (
-                <TextField
-                    label="Tagged with"
-                    value={taggedWith}
-                    onChange={handleTaggedWithChange}
-                    autoComplete="off"
-                    labelHidden
-                />
-            ),
-            shortcut: true,
-        },
-        {
-            key: 'moneySpent',
-            label: 'Money spent',
-            filter: (
-                <RangeSlider
-                    label="Money spent is between"
-                    labelHidden
-                    value={moneySpent || [0, 500]}
-                    prefix="$"
-                    output
-                    min={0}
-                    max={2000}
-                    step={1}
-                    onChange={handleMoneySpentChange}
-                />
-            ),
         },
     ];
 
     const appliedFilters: IndexFiltersProps['appliedFilters'] = [];
-    if (accountStatus && !isEmpty(accountStatus)) {
-        const key = 'accountStatus';
+    if (optimizeStatus && !isEmpty(optimizeStatus)) {
+        const key = 'optimizeStatus';
         appliedFilters.push({
             key,
-            label: disambiguateLabel(key, accountStatus),
-            onRemove: handleAccountStatusRemove,
-        });
-    }
-    if (moneySpent) {
-        const key = 'moneySpent';
-        appliedFilters.push({
-            key,
-            label: disambiguateLabel(key, moneySpent),
-            onRemove: handleMoneySpentRemove,
-        });
-    }
-    if (!isEmpty(taggedWith)) {
-        const key = 'taggedWith';
-        appliedFilters.push({
-            key,
-            label: disambiguateLabel(key, taggedWith),
-            onRemove: handleTaggedWithRemove,
+            label: disambiguateLabel(key, optimizeStatus),
+            onRemove: handleOptimizeStatusRemove,
         });
     }
 
-    const handleGetNextProducts = useCallback(async (nextPage: number, query: string = '') => {
+    const handleGetNextProducts = useCallback(async ({nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false}: handleGetNextProductsType) => {
         try {
             setLoading(true)
+
+            const params = new URLSearchParams()
+            if (query) params.append('search', query)
+            if (onlyNotOptimizedProducts) params.append('onlyNotOptimizedProducts', 'true')
+            if (onlyOptimizedProducts) params.append('onlyOptimizedProducts', 'true')
+
             const storeId = data.storeId.replace('gid://shopify/Shop/', '');
-            const result = await fetch(`/app/api/getproducts/${storeId}/${nextPage}?search=${query}`)
+            const result = await fetch(`/app/api/meta-data/getproducts/${storeId}/${nextPage}?${params.toString()}`)
 
             const fetchData = await result.json()
 
@@ -264,10 +233,18 @@ function MetaDataOptimizerPage() {
     useEffect(() => {
         setPage(0)
         setSearchLoading(true)
-        handleGetNextProducts(0, debouncedQuery)
+        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
         setSearchLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery])
+
+    useEffect(() => {
+        setPage(0)
+        setSearchLoading(true)
+        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+        setSearchLoading(false)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onlyNotOptimizedProducts, onlyOptimizedProducts])
 
     useEffect(() => {
         (() => {
@@ -377,7 +354,7 @@ function MetaDataOptimizerPage() {
                                 onNext: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage + 1
-                                        handleGetNextProducts(newPage)
+                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
                                         return newPage
                                     })
                                 },
@@ -385,7 +362,7 @@ function MetaDataOptimizerPage() {
                                 onPrevious: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage - 1
-                                        handleGetNextProducts(newPage)
+                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
                                         return newPage
                                     })
                                 }
@@ -406,24 +383,3 @@ function MetaDataOptimizerPage() {
 }
 
 export default MetaDataOptimizerPage
-function disambiguateLabel(key: string, value: string | any[]): string {
-    switch (key) {
-        case 'moneySpent':
-            return `Money spent is between $${value[0]} and $${value[1]}`;
-        case 'taggedWith':
-            return `Tagged with ${value}`;
-        case 'accountStatus':
-            return (value as string[]).map((val) => `Customer ${val}`).join(', ');
-        default:
-            return value as string;
-    }
-}
-
-function isEmpty(value: string | string[]): boolean {
-    if (Array.isArray(value)) {
-        return value.length === 0;
-    } else {
-        return value === '' || value == null;
-    }
-}
-
