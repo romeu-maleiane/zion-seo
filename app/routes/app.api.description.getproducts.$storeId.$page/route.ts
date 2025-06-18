@@ -24,17 +24,15 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined,
                 AND: [
-                    { generatedMetaTitle: null },
-                    { generatedMetaDescription: null }],
+                    { generatedDescription: null },
+                ],
             },
             select: {
                 productId: true,
                 productImage: true,
                 title: true,
-                currentMetaTitle: true,
-                currentMetaDescription: true,
-                generatedMetaDescription: true,
-                generatedMetaTitle: true,
+                currentDescription: true,
+                generatedDescription: true,
                 createdAt: true,
             }
         })
@@ -47,18 +45,15 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined,
                 NOT: [
-                    { generatedMetaTitle: null },
-                    { generatedMetaDescription: null }
+                    { generatedDescription: null },
                 ],
             },
             select: {
                 productId: true,
                 productImage: true,
                 title: true,
-                currentMetaTitle: true,
-                currentMetaDescription: true,
-                generatedMetaDescription: true,
-                generatedMetaTitle: true,
+                currentDescription: true,
+                generatedDescription: true,
                 createdAt: true,
             }
         })
@@ -75,10 +70,8 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
                 productId: true,
                 productImage: true,
                 title: true,
-                currentMetaTitle: true,
-                currentMetaDescription: true,
-                generatedMetaDescription: true,
-                generatedMetaTitle: true,
+                currentDescription: true,
+                generatedDescription: true,
                 createdAt: true,
             }
         })

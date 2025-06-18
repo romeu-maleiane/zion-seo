@@ -27,6 +27,9 @@ export default function App() {
         <Link to="/app/meta-data-optimizer" rel="Products">
           Meta Data Optimizer
         </Link>
+        <Link to="/app/description-optimizer" rel="Products">
+          Description Optimizer
+        </Link>
       </NavMenu>
       <Outlet />
     </AppProvider>

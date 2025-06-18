@@ -2,9 +2,7 @@ import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { Badge, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
 import CardAiSeoOptimizer from 'app/Components/cardAiSeoOptimizer'
 import { useCallback, useEffect, useState } from 'react'
-import {
-    ComposeIcon
-} from '@shopify/polaris-icons';
+import { TextBlockIcon } from '@shopify/polaris-icons';
 import type { IndexFiltersProps } from '@shopify/polaris';
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import { authenticate } from "app/shopify.server";
@@ -21,10 +19,8 @@ type Data = {
         productId: string;
         productImage: string | null;
         title: string;
-        currentMetaTitle: string;
-        currentMetaDescription: string;
-        generatedMetaDescription: string | null;
-        generatedMetaTitle: string | null;
+        currentDescription: string;
+        generatedDescription: string | null;
         createdAt: Date | string;
     }[]
     storeId: string;
@@ -36,10 +32,8 @@ type Product = {
     productId: string;
     productImage: string | null;
     title: string;
-    currentMetaTitle: string;
-    currentMetaDescription: string;
-    generatedMetaDescription: string | null;
-    generatedMetaTitle: string | null;
+    currentDescription: string;
+    generatedDescription: string | null;
     createdAt: Date | string;
 
 }
@@ -208,7 +202,7 @@ function MetaDataOptimizerPage() {
             if (onlyOptimizedProducts) params.append('onlyOptimizedProducts', 'true')
 
             const storeId = data.storeId.replace('gid://shopify/Shop/', '');
-            const result = await fetch(`/app/api/meta-data/getproducts/${storeId}/${nextPage}?${params.toString()}`)
+            const result = await fetch(`/app/api/description/getproducts/${storeId}/${nextPage}?${params.toString()}`)
 
             const fetchData = await result.json()
 
@@ -253,10 +247,8 @@ function MetaDataOptimizerPage() {
                     { productId,
                         productImage,
                         title,
-                        currentMetaTitle,
-                        currentMetaDescription,
-                        generatedMetaDescription,
-                        generatedMetaTitle,
+                        currentDescription,
+                        generatedDescription,
                         createdAt },
                     index,
                 ) => (
@@ -273,12 +265,11 @@ function MetaDataOptimizerPage() {
                             />
                         </IndexTable.Cell>
                         <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
-                        <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
                         <IndexTable.Cell>
-                            {currentMetaDescription || '—'}
+                            {currentDescription || '—'}
                         </IndexTable.Cell>
                         <IndexTable.Cell>
-                            {generatedMetaDescription && generatedMetaTitle
+                            {generatedDescription
                                 ? <Badge tone='success'>Optimized</Badge>
                                 : <Badge>Not optimized</Badge>
                             }
@@ -288,10 +279,10 @@ function MetaDataOptimizerPage() {
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <InlineStack blockAlign='center' align='center' >
-                                <Link url={`/app/optimize-meta-data/${productId.replace('gid://shopify/Product/', '')}`}>
+                                <Link url={`/app/optimize-product-description/${productId.replace('gid://shopify/Product/', '')}`}>
                                     <div style={{ width: '20px', height: '20px' }}>
                                         <Icon
-                                            source={ComposeIcon}
+                                            source={TextBlockIcon}
                                             tone="base"
                                         />
                                     </div>
@@ -308,7 +299,7 @@ function MetaDataOptimizerPage() {
     return (
         <Frame>
             <Page
-                title='Meta Data Optimizer'
+                title='Description Optimizer'
                 backAction={{ content: 'Dashboard', url: '/app' }}
                 fullWidth
             >
@@ -343,8 +334,7 @@ function MetaDataOptimizerPage() {
                             headings={[
                                 { title: '' },
                                 { title: 'Product name' },
-                                { title: 'Meta title' },
-                                { title: 'Meta description' },
+                                { title: 'Description' },
                                 { title: 'Optimize status' },
                                 { title: 'Date' },
                                 { title: 'Action', alignment: 'center' },
