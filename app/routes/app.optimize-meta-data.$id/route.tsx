@@ -80,7 +80,7 @@ function OptimizeMetaDataPage() {
   const [metaTittle, setMetaTitle] = useState<string>('')
   const [metaDescription, setMetaDescription] = useState<string>('')
   const [keyWordInput, setKeyWordInput] = useState<string>('')
-  const [keyWords, setKeyWords] = useState<Array<string>>(['hi', 'hi', 'hi',])
+  const [keyWords, setKeyWords] = useState<Array<string>>(['hi', 'he', 'ho',])
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>(['hello', 'hello', 'hello',])
   const { productData, aiCredits } = data
 
@@ -98,30 +98,26 @@ function OptimizeMetaDataPage() {
       .map(keyWord => keyWord.trim())
       .filter(keyWord => keyWord.length > 0)
     
+    setKeyWordInput('')
+
     setKeyWords( prev => {
-      const newKeyWords = new Set(...prev, ...arrayOfKeyWords)
+      const newKeyWords = new Set([...prev, ...arrayOfKeyWords])
       return [...newKeyWords]
     })
 
   },[keyWordInput])
 
   const handleRemoveKeyWord = useCallback((index: number) => {
-    setKeyWords( prev => {
-      const newKeyWords = prev.splice(index,1)
-      return newKeyWords
-    })
+    setKeyWords( prev => prev.filter((_, i) => i !== index))
   },[])
 
   const handleAddSuggestedKeyWord = useCallback((index: number) => {
     setKeyWords( prev => {
-      const newKeyWords = new Set(...prev, suggestedKeyWords[index])
+      const newKeyWords = new Set([...prev, suggestedKeyWords[index]])
       return [...newKeyWords]
     })
 
-    setSuggestedKeyWords( prev => {
-      const newKeyWords = prev.splice(index,1)
-      return newKeyWords
-    })
+    setSuggestedKeyWords( prev => prev.filter((_, i) => i !== index))
   },[suggestedKeyWords])
 
   return (
@@ -164,12 +160,12 @@ function OptimizeMetaDataPage() {
                     label="Meta Description"
                     type="text"
                     maxLength={165}
-                    multiline={5}
+                    multiline={3}
                     autoComplete="meta description"
                   />
                 </Box>
 
-                <BlockStack>
+                <BlockStack gap='200'>
                   <InlineStack blockAlign='end' align='space-between'>
                     <div style={{ width: '85%' }}>
                       <TextField
@@ -177,6 +173,7 @@ function OptimizeMetaDataPage() {
                         onChange={handleOnChangeKeyWordInput}
                         label="Provide keywords for our AI"
                         type="text"
+                        placeholder="e.g. organic cotton, eco-friendly, summer collection"
                         autoComplete="Provide keywords for our AI"
                       />
                     </div>
