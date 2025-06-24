@@ -76,18 +76,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 id                
                 title             
                 description
-                createdAt       
+                createdAt
+                variants(first: 1) {
+                  nodes {
+                    price
+                  }
+                }       
                 seo {
                   title           
                   description     
                 }
                 featuredMedia {
                   mediaContentType
-                  ...on MediaImage {
+                  ... on MediaImage {
                     image {
                       url
                     }
-                  }           
+                  }            
                 }
               }
             }
@@ -106,7 +111,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 id                
                 title             
                 description
-                createdAt       
+                createdAt
+                variants(first: 1) {
+                  nodes {
+                    price
+                  }
+                }       
                 seo {
                   title           
                   description     
@@ -162,7 +172,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       noDataOfOptimizedProductsYet,
       noDataOfDescriptionsYet,
       noDataOfMetaDataYet,
-      activePlan: storeBalance?.activePlan ,
+      activePlan: storeBalance?.activePlan,
       aiCredits: storeBalance?.aiCredits
     }, { status: 200 });
 
@@ -234,7 +244,7 @@ export default function Index() {
         </Layout.Section>
 
         <Layout.Section>
-          <CardAiSeoOptimizer activePlan={activePlan} aiCredits={aiCredits}/>
+          <CardAiSeoOptimizer activePlan={activePlan} aiCredits={aiCredits} />
         </Layout.Section>
 
         <Layout.Section>

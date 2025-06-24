@@ -6,6 +6,11 @@ interface CreateOrUpdateProductsType {
         title: string
         description: string
         createdAt: string
+        variants: {
+            nodes: Array<{
+                price: string
+            }>
+        }
         seo: {
             title: string
             description: string
@@ -27,7 +32,8 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
             const productImage = product?.node?.featuredMedia?.image?.url
                 ? product.node.featuredMedia.image.url
                 : 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_large.png';
-
+            const productPrice = +(product.node.variants.nodes[0]?.price || '0');
+            
             const metaTitle = product.node?.seo?.title 
                 ? product.node.seo.title : '';
             const metaDescription = product.node?.seo?.description 
@@ -39,6 +45,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
                 },
                 update: {
                     productImage: productImage,
+                    productPrice: productPrice,
                     storeId: shopId,
                     title: product.node.title,
                     currentDescription: product.node.description,
@@ -49,6 +56,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
                 create: {
                     productId: product.node.id,
                     productImage: productImage,
+                    productPrice: productPrice,
                     title: product.node.title,
                     currentDescription: product.node.description,
                     currentMetaTitle: metaTitle,

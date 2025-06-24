@@ -49,6 +49,7 @@ model Product {
   id          String   @id  @default(uuid())
   productId   String @unique
   productImage String?
+  productPrice  Float?
   storeId     String
   store       Store    @relation(fields: [storeId], references: [storeId])
   title       String

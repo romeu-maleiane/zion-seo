@@ -1,6 +1,7 @@
 import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Tag, Divider, Link } from '@shopify/polaris'
 import {
   MagicIcon,
+  MenuVerticalIcon,
   PlusCircleIcon,
   XCircleIcon
 } from '@shopify/polaris-icons';
@@ -15,16 +16,17 @@ import { useCallback, useEffect, useState } from 'react';
 
 
 type Data = {
-    productData: {
-        productId: string;
-        productImage: string | null;
-        title: string;
-        currentMetaTitle: string;
-        currentMetaDescription: string;
-        createdAt: Date | string;
-    }
-    storeId: string;
-    aiCredits: number | null;
+  productData: {
+    productId: string;
+    productImage: string | null;
+    productPrice: string | null; 
+    title: string;
+    currentMetaTitle: string;
+    currentMetaDescription: string;
+    createdAt: Date | string;
+  }
+  storeId: string;
+  aiCredits: number | null;
 }
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -49,6 +51,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       select: {
         productId: true,
         productImage: true,
+        productPrice: true,
         title: true,
         currentMetaTitle: true,
         currentMetaDescription: true,
@@ -87,38 +90,38 @@ function OptimizeMetaDataPage() {
   useEffect(() => {
     setMetaDescription(productData.currentMetaDescription)
     setMetaTitle(productData.currentMetaTitle)
-  },[productData.currentMetaDescription, productData.currentMetaTitle])
+  }, [productData.currentMetaDescription, productData.currentMetaTitle])
 
-  const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value),[])
-  const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value),[])
-  const handleOnChangeKeyWordInput = useCallback((value: string) => setKeyWordInput(value),[])
+  const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
+  const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])
+  const handleOnChangeKeyWordInput = useCallback((value: string) => setKeyWordInput(value), [])
 
   const handleAddKeyWord = useCallback(() => {
     const arrayOfKeyWords = keyWordInput.split(',')
       .map(keyWord => keyWord.trim())
       .filter(keyWord => keyWord.length > 0)
-    
+
     setKeyWordInput('')
 
-    setKeyWords( prev => {
+    setKeyWords(prev => {
       const newKeyWords = new Set([...prev, ...arrayOfKeyWords])
       return [...newKeyWords]
     })
 
-  },[keyWordInput])
+  }, [keyWordInput])
 
   const handleRemoveKeyWord = useCallback((index: number) => {
-    setKeyWords( prev => prev.filter((_, i) => i !== index))
-  },[])
+    setKeyWords(prev => prev.filter((_, i) => i !== index))
+  }, [])
 
   const handleAddSuggestedKeyWord = useCallback((index: number) => {
-    setKeyWords( prev => {
+    setKeyWords(prev => {
       const newKeyWords = new Set([...prev, suggestedKeyWords[index]])
       return [...newKeyWords]
     })
 
-    setSuggestedKeyWords( prev => prev.filter((_, i) => i !== index))
-  },[suggestedKeyWords])
+    setSuggestedKeyWords(prev => prev.filter((_, i) => i !== index))
+  }, [suggestedKeyWords])
 
   return (
     <Page title={`${productData.title}`}>
@@ -175,41 +178,42 @@ function OptimizeMetaDataPage() {
                         type="text"
                         placeholder="e.g. organic cotton, eco-friendly, summer collection"
                         autoComplete="Provide keywords for our AI"
+                        requiredIndicator
                       />
                     </div>
                     <div style={{ width: '13%' }}>
                       <Button onClick={handleAddKeyWord} fullWidth size="large">Add</Button>
                     </div>
                   </InlineStack>
-                  {keyWords && 
+                  {keyWords &&
                     <Box>
                       <InlineStack gap='200' align='start'>
                         {keyWords.map((keyWord, index) => (
                           <Tag key={index}>
-                              <InlineStack gap='100'>
-                                <span>{keyWord}</span>
-                                <span onClick={() => handleRemoveKeyWord(index)}><Icon source={XCircleIcon} /></span>
-                              </InlineStack>
+                            <InlineStack gap='100'>
+                              <span>{keyWord}</span>
+                              <span onClick={() => handleRemoveKeyWord(index)}><Icon source={XCircleIcon} /></span>
+                            </InlineStack>
                           </Tag>
                         ))}
                       </InlineStack>
                     </Box>
                   }
                 </BlockStack>
-                  
+
                 <BlockStack inlineAlign='start' gap='100'>
                   <Text as='span'>Click to add these suggested keywords for our AI engine:</Text>
                   <InlineStack gap='200' align='start'>
-                    <div className='icon-color'>
+                    <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
 
                       <Icon
                         source={MagicIcon}
                       />
                     </div>
                     {suggestedKeyWords.map((keyWord, index) => (
-                      <div key={index} className='suggested-keyword-tag-background-color'>
+                      <div key={index} style={{ color: 'var(--p-color-bg-fill-magic-secondary)' }}>
                         <Tag >
-                          <div className='ai-text-color'>
+                          <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
                             <InlineStack gap='100'>
                               <span>{keyWord}</span>
                               <span onClick={() => handleAddSuggestedKeyWord(index)}><Icon source={PlusCircleIcon} /></span>
@@ -236,12 +240,84 @@ function OptimizeMetaDataPage() {
                   <Divider />
                 </Box>
               </Box>
-              <p>
-                Use to follow a normal section with a secondary section to create
-                a 2/3 + 1/3 layout on detail pages (such as individual product or
-                order pages). Can also be used on any page that needs to structure
-                a lot of content. This layout stacks the columns on small screens.
-              </p>
+              <BlockStack gap='100'>
+                <Text as='h3'>
+                  Google Search Preview
+                </Text>
+                <div style={{ width: '85%' }}>
+                  <Card padding={{ xs: '100', sm: '200' }}>
+                    <InlineStack align='space-between'>
+                      <div style={{ width: '80%' }}>
+                        <BlockStack >
+                          <div style={{ width: '85%' }}>
+                            <InlineStack align='space-between'>
+                              <div style={{ width: '92%' }}>
+                                <Text as='span' truncate >
+                                  https://storename.com {'>'} products {'>'} {productData.title.toLowerCase().replace(/\s+/g, '-')}
+                                </Text>
+                              </div>
+
+                              <Icon
+                                source={MenuVerticalIcon}
+                                tone="base"
+                              />
+                            </InlineStack>
+                          </div>
+
+                          <div style={{ color: 'var(--p-color-text-link)' }}>
+                            <Text as='h3' variant="headingLg" fontWeight='regular'>
+                              {metaTittle}
+                            </Text>
+                          </div>
+
+                          <Text as='p' variant='bodyLg' breakWord>
+                            {metaDescription}
+                          </Text>
+                        </BlockStack>
+                      </div>
+
+                      <div style={{ height: 80, width: 80  }}>
+                        <Thumbnail
+                          source={productData.productImage || '/assets/imgs/placeholder.png'}
+                          size="large"
+                          alt={`${productData.title} Image`}
+                        />
+                      </div>
+                    </InlineStack>
+                  </Card>
+                </div>
+              </BlockStack>
+
+              <Box paddingBlockStart='300'>
+                <BlockStack gap='100'>
+                  <Text as='h3'>
+                    AI Search Preview
+                  </Text>
+                  <div style={{ width: 140 }}>
+                    
+                    <Card padding={{ xs: '0', sm: '0' }}>
+                      <Image src={`${productData.productImage}`} width={140} height={140} alt='ai image' />
+                    
+                      <Box padding={{ xs: '200', sm: '300' }} paddingBlockStart='0'>
+                        <Text as='h3' variant="headingMd" fontWeight='semibold' breakWord>
+                          {productData.title}
+                        </Text>
+                        <Box paddingBlockStart='200'>
+                          <BlockStack gap='100'>
+                            <Text as='p' variant='bodyLg' fontWeight='semibold' breakWord>
+                              ${productData.productPrice}
+                            </Text>
+
+                            <Text as='p' variant='bodyMd' breakWord>
+                              And 3 others
+                            </Text>
+                          </BlockStack>
+                        </Box>
+                      </Box>
+                    </Card>
+                  </div>
+                </BlockStack>
+              </Box>
             </Card>
           </Box>
         </Layout.Section>
@@ -249,9 +325,9 @@ function OptimizeMetaDataPage() {
           <Card  >
             <BlockStack gap='100'>
               <InlineStack gap='200' wrap={false}>
-                <Image src='/assets/imgs/ia.png' width={40} height={40} alt='ia' />
+                <Image src='/assets/imgs/ia.png' width={40} height={40} alt='ai image' />
                 <BlockStack>
-                  <div className='ai-text-color'>
+                  <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
                     <Text as='h2' variant="headingLg" fontWeight='medium'>AI Meta title/description optimizer</Text>
                   </div>
                   <Text as='p'>

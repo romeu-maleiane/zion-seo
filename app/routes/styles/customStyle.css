@@ -1,11 +1,16 @@
 .suggested-keyword-tag-background-color .Polaris-Tag  {
-    background-color: #e4deff !important;
+    background-color: var(--p-color-bg-fill-magic-secondary) !important;
 }
 
 .ai-text-color {
-    color: #5700d1 !important;  
+    color: var(--p-color-text-magic-secondary) !important;  
 }
 
 .icon-color {
-    color: #5700d1 !important;  
+    color: var(--p-color-text-magic-secondary) !important;  
+}
+
+
+.blue-text {
+    color: var(--p-color-text-link) !important;
 }
