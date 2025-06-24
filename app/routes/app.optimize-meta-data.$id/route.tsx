@@ -153,6 +153,7 @@ function OptimizeMetaDataPage() {
                     type="text"
                     maxLength={70}
                     autoComplete="meta title"
+                    showCharacterCount
                   />
                   {/* <Text as='span'> hello fadsdwdadadawda</Text> */}
                 </Box>
@@ -165,6 +166,7 @@ function OptimizeMetaDataPage() {
                     maxLength={165}
                     multiline={3}
                     autoComplete="meta description"
+                    showCharacterCount
                   />
                 </Box>
 
