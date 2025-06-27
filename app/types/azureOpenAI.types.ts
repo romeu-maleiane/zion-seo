@@ -5,6 +5,7 @@ export type Options = {
     apiVersion: string | undefined;
 }
 
+// types for optimizeMetaData function
 export type MetaData = {
     optimizedMetaTitle: string;
     optimizedMetaDescription: string;
@@ -20,5 +21,19 @@ export interface OptimizeMetaDataType {
 export type OptimizedMetaDataOutput = {
     optimizedMetaTitle: string | null;
     optimizedMetaDescription: string | null;
+    status: string;
+}
+
+// types for suggestKeywords function
+export interface SuggestKeywordsType {
+    productTitle: string;
+}
+
+export type SuggestedKeywords = {
+    suggestedKeywords: string[];
+}
+
+export type SuggestedKeywordsOutput = {
+    suggestedKeywords: string[] | null;
     status: string;
 }

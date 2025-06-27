@@ -37,21 +37,17 @@ export const optimizeMetaData = async ({
                         `
                     }, {
                         role: "user",
-                        content: [
+                        content: `Product data:
+                            Product title: ${productTitle}
+                            Keywords: ${keywords}
+                            Current meta title: ${metaTitle} (may be null or empty)
+                            Current meta description: ${metaDescription} (may be null or empty)
+                            Respond in the following JSON format:
                             {
-                                type: "text", text: `Product data:
-                                    Product title: ${productTitle}
-                                    Keywords: ${keywords}
-                                    Current meta title: ${metaTitle} (may be null or empty)
-                                    Current meta description: ${metaDescription} (may be null or empty)
-                                    Respond in the following JSON format:
-                                    {
-                                        "optimizedMetaTitle": "Optimized title here",
-                                        "optimizedMetaDescription": "Optimized description here"
-                                    }
-                                `
-                            },
-                        ]
+                                "optimizedMetaTitle": "Optimized title here",
+                                "optimizedMetaDescription": "Optimized description here"
+                            }
+                        `
                     }
                 ],
                 max_tokens: 300,
