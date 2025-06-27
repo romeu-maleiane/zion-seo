@@ -12,7 +12,7 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
-import { createOrUpdateShop } from "app/models/createOrUpdadeShop.server"
+import { createOrUpdateShop } from "app/models/createOrUpdateShop.server"
 import { GraphqlQueryError } from '@shopify/shopify-api';
 import StoreInformationComponent from "app/Components/storeInformation.component";
 import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server";
