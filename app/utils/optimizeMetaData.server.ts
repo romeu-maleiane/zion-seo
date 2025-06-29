@@ -71,7 +71,7 @@ export const optimizeMetaData = async ({
             status: 'success'
         }
     } catch (error) {
-        console.error(error)
+        console.error('OptimeMetaData error:', error)
         return {
             optimizedMetaTitle: null, 
             optimizedMetaDescription: null,

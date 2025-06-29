@@ -13,6 +13,7 @@ import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
 import { useLoaderData } from "@remix-run/react";
 import { useCallback, useEffect, useState } from 'react';
+import { suggestKeywords } from 'app/utils/suggestKeywords.server';
 
 
 type Data = {
@@ -27,6 +28,7 @@ type Data = {
   }
   storeId: string;
   aiCredits: number | null;
+  keywords: string[] 
 }
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -37,11 +39,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   try {
     const shop = await admin.graphql(
       `#graphql
-            query shopInfo {
-                shop {
-                    id
-                }
-            }`,
+        query shopInfo {
+            shop {
+                id
+            }
+        }
+      `,
     );
 
     const shopData = await shop.json()
@@ -59,6 +62,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       }
     })
 
+    if(!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
+
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
+
+    if(keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
+
     const storeBalance = await prisma.store.findUnique({
       where: { storeId: shopData.data.shop.id },
       select: {
@@ -67,12 +76,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     })
 
 
-    return Response.json({ productData, storeId: shopData.data.shop.id, aiCredits: storeBalance?.aiCredits }, { status: 200 })
+    return Response.json({ 
+      productData, 
+      storeId: shopData.data.shop.id, 
+      aiCredits: storeBalance?.aiCredits,
+      keywords: keywordsData.suggestedKeywords || [] 
+    }, { status: 200 })
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
 
       console.error('Meta Data Optimizer Error: ', error)
-      return Response.json({ errors: error.body?.errors }, { status: 500 });
+      return Response.json({ message: "An error occurred" }, { status: 500 });
     }
     console.error('Meta Data Optimizer Error: ', error)
     return Response.json({ message: "An error occurred" }, { status: 500 });
@@ -83,14 +97,17 @@ function OptimizeMetaDataPage() {
   const [metaTittle, setMetaTitle] = useState<string>('')
   const [metaDescription, setMetaDescription] = useState<string>('')
   const [keyWordInput, setKeyWordInput] = useState<string>('')
-  const [keyWords, setKeyWords] = useState<Array<string>>(['hi', 'he', 'ho',])
-  const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>(['hello', 'hello', 'hello',])
-  const { productData, aiCredits } = data
+  const [keyWords, setKeyWords] = useState<Array<string>>([])
+  const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
+  const { productData, aiCredits, keywords } = data
+
+  console.log('product data: ', productData)
 
   useEffect(() => {
-    setMetaDescription(productData.currentMetaDescription)
-    setMetaTitle(productData.currentMetaTitle)
-  }, [productData.currentMetaDescription, productData.currentMetaTitle])
+    setMetaDescription(productData?.currentMetaDescription || '')
+    setMetaTitle(productData?.currentMetaTitle || '')
+    setSuggestedKeyWords(keywords)
+  }, [productData.currentMetaDescription, productData.currentMetaTitle, keywords])
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
   const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])

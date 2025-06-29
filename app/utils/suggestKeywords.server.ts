@@ -3,16 +3,18 @@ import type { Options, SuggestKeywordsType, SuggestedKeywords, SuggestedKeywords
 
 
 const AZURE_DEPLOYMENT_NAME = process.env.AZURE_DEPLOYMENT_NAME || '';
-const AZURE_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || '';
+const AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || '';
 const AZURE_API_KEY = process.env.AZURE_OPENAI_KEY || '';
 const AZURE_OPENAI_MODEL = process.env.AZURE_OPENAI_MODEL || ''
 const AZURE_API_VERSION = process.env.AZURE_API_VERSION
 
 
-export const optimizeMetaData = async ({ productTitle, }: SuggestKeywordsType): Promise<SuggestedKeywordsOutput> => {
-
+export const suggestKeywords = async ({ productTitle, }: SuggestKeywordsType): Promise<SuggestedKeywordsOutput> => {
+    if (!productTitle) {
+        throw new Error('Product title not provided');
+    }
     try {
-        const options: Options = { endpoint: AZURE_ENDPOINT, apiKey: AZURE_API_KEY, deployment: AZURE_DEPLOYMENT_NAME, apiVersion: AZURE_API_VERSION }
+        const options: Options = { endpoint: AZURE_OPENAI_ENDPOINT, apiKey: AZURE_API_KEY, deployment: AZURE_DEPLOYMENT_NAME, apiVersion: AZURE_API_VERSION }
         const client = new AzureOpenAI(options)
 
 
@@ -60,7 +62,7 @@ export const optimizeMetaData = async ({ productTitle, }: SuggestKeywordsType): 
             status: 'success'
         }
     } catch (error) {
-        console.error(error)
+        console.error('SuggestKeyword erro: ',error)
         return {
             suggestedKeywords: null,
             status: 'error'
