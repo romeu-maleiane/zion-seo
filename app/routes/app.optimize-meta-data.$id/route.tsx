@@ -1,9 +1,6 @@
-import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Tag, Divider, Link, Spinner } from '@shopify/polaris'
+import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Divider, Link, Spinner } from '@shopify/polaris'
 import {
   MagicIcon,
-  MenuVerticalIcon,
-  PlusCircleIcon,
-  XCircleIcon
 } from '@shopify/polaris-icons';
 import { Image } from "@unpic/react"
 import "../styles/customStyle.css";
@@ -15,6 +12,9 @@ import { useLoaderData } from "@remix-run/react";
 import { useCallback, useEffect, useState } from 'react';
 import { suggestKeywords } from 'app/utils/suggestKeywords.server';
 import { fetchOptimizedMetaData } from 'app/utils/fetchOptimizedMetData.client';
+import PreviewInput from 'app/Components/previewInput';
+import KeywordInput from 'app/Components/keywordInput';
+import KeywordSuggestionBlock from 'app/Components/KeywordSuggestionBlock';
 
 
 type Data = {
@@ -65,7 +65,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if(!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''}) 
+    const keywordsData = /*await suggestKeywords({ productTitle: productData?.title || ''})*/ { suggestedKeywords: [], status: '' } 
 
     if(keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -101,7 +101,7 @@ function OptimizeMetaDataPage() {
   const [optimizedMetaDescription, setOptimizedMetaDescription] = useState<string>('')
   const [showOptimizedMetaTitle, setShowOptimizedMetaTitle] = useState<boolean>(false)
   const [showOptimizedMetaDescription, setShowOptimizedMetaDescription] = useState<boolean>(false)
-  const [keyWordInput, setKeyWordInput] = useState<string>('')
+  const [keyWordInputValue, setKeyWordInputValue] = useState<string>('')
   const [keyWords, setKeyWords] = useState<Array<string>>([])
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
@@ -116,21 +116,21 @@ function OptimizeMetaDataPage() {
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
   const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])
-  const handleOnChangeKeyWordInput = useCallback((value: string) => setKeyWordInput(value), [])
+  const handleOnChangeKeyWordInputValue = useCallback((value: string) => setKeyWordInputValue(value), [])
 
   const handleAddKeyWord = useCallback(() => {
-    const arrayOfKeyWords = keyWordInput.split(',')
+    const arrayOfKeyWords = keyWordInputValue.split(',')
       .map(keyWord => keyWord.trim())
       .filter(keyWord => keyWord.length > 0)
 
-    setKeyWordInput('')
+    setKeyWordInputValue('')
 
     setKeyWords(prev => {
       const newKeyWords = new Set([...prev, ...arrayOfKeyWords])
       return [...newKeyWords]
     })
 
-  }, [keyWordInput])
+  }, [keyWordInputValue])
 
   const handleRemoveKeyWord = useCallback((index: number) => {
     setKeyWords(prev => prev.filter((_, i) => i !== index))
@@ -275,61 +275,18 @@ function OptimizeMetaDataPage() {
                   </div>
                 </Box>
 
-                <BlockStack gap='200'>
-                  <InlineStack blockAlign='end' align='space-between'>
-                    <div style={{ width: '85%' }}>
-                      <TextField
-                        value={keyWordInput}
-                        onChange={handleOnChangeKeyWordInput}
-                        label="Provide keywords for our AI"
-                        type="text"
-                        placeholder="e.g. organic cotton, eco-friendly, summer collection"
-                        autoComplete="Provide keywords for our AI"
-                        requiredIndicator
-                      />
-                    </div>
-                    <div style={{ width: '13%' }}>
-                      <Button onClick={handleAddKeyWord} fullWidth size="large">Add</Button>
-                    </div>
-                  </InlineStack>
-                  {keyWords &&
-                    <Box>
-                      <InlineStack gap='200' align='start'>
-                        {keyWords.map((keyWord, index) => (
-                          <Tag key={index}>
-                            <InlineStack gap='100'>
-                              <span>{keyWord}</span>
-                              <span onClick={() => handleRemoveKeyWord(index)}><Icon source={XCircleIcon} /></span>
-                            </InlineStack>
-                          </Tag>
-                        ))}
-                      </InlineStack>
-                    </Box>
-                  }
-                </BlockStack>
+                <KeywordInput 
+                  keyWordInputValue={keyWordInputValue}
+                  keyWords={keyWords}
+                  handleOnChangeKeyWordInputValue={handleOnChangeKeyWordInputValue}
+                  handleAddKeyWord={handleAddKeyWord}
+                  handleRemoveKeyWord={handleRemoveKeyWord}
+                />
 
-                <BlockStack inlineAlign='start' gap='100'>
-                  <Text as='span'>Click to add these suggested keywords for our AI engine:</Text>
-                  <InlineStack gap='200' align='start'>
-                    <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                      <Icon
-                        source={MagicIcon}
-                      />
-                    </div>
-                    {suggestedKeyWords.map((keyWord, index) => (
-                      <div key={index} style={{ color: 'var(--p-color-bg-fill-magic-secondary)' }}>
-                        <Tag >
-                          <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                            <InlineStack gap='100'>
-                              <span>{keyWord}</span>
-                              <span onClick={() => handleAddSuggestedKeyWord(index)}><Icon source={PlusCircleIcon} /></span>
-                            </InlineStack>
-                          </div>
-                        </Tag>
-                      </div>
-                    ))}
-                  </InlineStack>
-                </BlockStack>
+                <KeywordSuggestionBlock 
+                  suggestedKeyWords={suggestedKeyWords} 
+                  handleAddSuggestedKeyWord={handleAddSuggestedKeyWord} 
+                />
 
                 <InlineStack align='end'>
                   <Button size="large" submit>Post</Button>
@@ -338,94 +295,8 @@ function OptimizeMetaDataPage() {
             </Form>
           </Card>
 
-          <Box paddingBlockStart='300' >
-            <Card >
-              <Box paddingBlockEnd='300'>
-                <Text as='h2' variant="headingLg" fontWeight='medium'>Preview snippet</Text>
-                <Box paddingBlockStart='100'>
-                  <Divider />
-                </Box>
-              </Box>
-              <BlockStack gap='100'>
-                <Text as='h3'>
-                  Google Search Preview
-                </Text>
-                <div style={{ width: '85%' }}>
-                  <Card padding={{ xs: '100', sm: '200' }}>
-                    <InlineStack align='space-between'>
-                      <div style={{ width: '80%' }}>
-                        <BlockStack >
-                          <div style={{ width: '85%' }}>
-                            <InlineStack align='space-between'>
-                              <div style={{ width: '92%' }}>
-                                <Text as='span' truncate >
-                                  https://storename.com {'>'} products {'>'} {productData.title.toLowerCase().replace(/\s+/g, '-')}
-                                </Text>
-                              </div>
-
-                              <Icon
-                                source={MenuVerticalIcon}
-                                tone="base"
-                              />
-                            </InlineStack>
-                          </div>
-
-                          <div style={{ color: 'var(--p-color-text-link)' }}>
-                            <Text as='h3' variant="headingLg" fontWeight='regular'>
-                              {metaTitle}
-                            </Text>
-                          </div>
-
-                          <Text as='p' variant='bodyLg' breakWord>
-                            {metaDescription}
-                          </Text>
-                        </BlockStack>
-                      </div>
-
-                      <div style={{ height: 80, width: 80  }}>
-                        <Thumbnail
-                          source={productData.productImage || '/assets/imgs/placeholder.png'}
-                          size="large"
-                          alt={`${productData.title} Image`}
-                        />
-                      </div>
-                    </InlineStack>
-                  </Card>
-                </div>
-              </BlockStack>
-
-              <Box paddingBlockStart='300'>
-                <BlockStack gap='100'>
-                  <Text as='h3'>
-                    AI Search Preview
-                  </Text>
-                  <div style={{ width: 140 }}>
-                    
-                    <Card padding={{ xs: '0', sm: '0' }}>
-                      <Image src={`${productData.productImage}`} width={140} height={140} alt='ai image' />
-                    
-                      <Box padding={{ xs: '200', sm: '300' }} paddingBlockStart='0'>
-                        <Text as='h3' variant="headingMd" fontWeight='semibold' breakWord>
-                          {productData.title}
-                        </Text>
-                        <Box paddingBlockStart='200'>
-                          <BlockStack gap='100'>
-                            <Text as='p' variant='bodyLg' fontWeight='semibold' breakWord>
-                              ${productData.productPrice}
-                            </Text>
-
-                            <Text as='p' variant='bodyMd' breakWord>
-                              And 3 others
-                            </Text>
-                          </BlockStack>
-                        </Box>
-                      </Box>
-                    </Card>
-                  </div>
-                </BlockStack>
-              </Box>
-            </Card>
-          </Box>
+          <PreviewInput productTitle={productData.title} productImage={productData.productImage || ''} productPrice={productData.productPrice || '10.00'}  metaTitle={metaTitle} metaDescription={metaDescription} />
+        
         </Layout.Section>
         <Layout.Section variant="oneThird">
           <Card  >
