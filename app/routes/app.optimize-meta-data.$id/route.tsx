@@ -1,4 +1,4 @@
-import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Tag, Divider, Link } from '@shopify/polaris'
+import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Tag, Divider, Link, Spinner } from '@shopify/polaris'
 import {
   MagicIcon,
   MenuVerticalIcon,
@@ -14,6 +14,7 @@ import prisma from "app/db.server";
 import { useLoaderData } from "@remix-run/react";
 import { useCallback, useEffect, useState } from 'react';
 import { suggestKeywords } from 'app/utils/suggestKeywords.server';
+import { fetchOptimizedMetaData } from 'app/utils/fetchOptimizedMetData.client';
 
 
 type Data = {
@@ -64,7 +65,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if(!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''}) 
 
     if(keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -94,20 +95,24 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 }
 function OptimizeMetaDataPage() {
   const data: Data = useLoaderData()
-  const [metaTittle, setMetaTitle] = useState<string>('')
+  const [metaTitle, setMetaTitle] = useState<string>('')
   const [metaDescription, setMetaDescription] = useState<string>('')
+  const [optimizedMetaTitle, setOptimizedMetaTitle] = useState<string>('')
+  const [optimizedMetaDescription, setOptimizedMetaDescription] = useState<string>('')
+  const [showOptimizedMetaTitle, setShowOptimizedMetaTitle] = useState<boolean>(false)
+  const [showOptimizedMetaDescription, setShowOptimizedMetaDescription] = useState<boolean>(false)
   const [keyWordInput, setKeyWordInput] = useState<string>('')
   const [keyWords, setKeyWords] = useState<Array<string>>([])
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
+  const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
   const { productData, aiCredits, keywords } = data
 
-  console.log('product data: ', productData)
 
   useEffect(() => {
     setMetaDescription(productData?.currentMetaDescription || '')
     setMetaTitle(productData?.currentMetaTitle || '')
     setSuggestedKeyWords(keywords)
-  }, [productData.currentMetaDescription, productData.currentMetaTitle, keywords])
+  }, [productData, keywords])
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
   const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])
@@ -140,6 +145,38 @@ function OptimizeMetaDataPage() {
     setSuggestedKeyWords(prev => prev.filter((_, i) => i !== index))
   }, [suggestedKeyWords])
 
+  const handleFetchOptimizedMetaData = useCallback( async() => {
+    try {
+      setLoadingOptimizedMetaData(true)
+  
+      const stringOfKeywords = keywords.join(`, `)
+      console.log('stringOfKeywords: ',stringOfKeywords)
+  
+      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaDescription:productData.currentMetaDescription, metaTitle: productData.currentMetaDescription})
+      if(!optimizedMetaData) throw new Error("An error occured fetching optimized meta mata");
+      
+      setOptimizedMetaTitle(optimizedMetaData.optimizedMetaTitle)
+      setOptimizedMetaDescription(optimizedMetaData.optimizedMetaDescription)
+      
+      setShowOptimizedMetaTitle(true)
+      setShowOptimizedMetaDescription(true)
+
+      setLoadingOptimizedMetaData(false)
+    } catch (error) {
+      setLoadingOptimizedMetaData(false)
+    }
+  },[keywords, productData])
+
+  const handleChoseOptimizedMetaTitle = useCallback(() => {
+    setMetaTitle(optimizedMetaTitle)
+    setShowOptimizedMetaTitle(false)
+  },[optimizedMetaTitle])
+
+  const handleChoseOptimizedMetaDescription = useCallback(() => {
+    setMetaDescription(optimizedMetaDescription)
+    setShowOptimizedMetaDescription(false)
+  },[optimizedMetaDescription])
+
   return (
     <Page title={`${productData.title}`}>
       <Layout>
@@ -164,7 +201,7 @@ function OptimizeMetaDataPage() {
                 </BlockStack>
                 <Box >
                   <TextField
-                    value={metaTittle}
+                    value={metaTitle}
                     onChange={handleOnChangeMetaTitle}
                     label="Meta Title"
                     type="text"
@@ -172,7 +209,32 @@ function OptimizeMetaDataPage() {
                     autoComplete="meta title"
                     showCharacterCount
                   />
-                  {/* <Text as='span'> hello fadsdwdadadawda</Text> */}
+                  
+                  <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
+                    {loadingOptimizedMetaData ? 
+                      <Spinner accessibilityLabel="Loading optimized meta data" size="small" />
+                    :
+                      <>
+                      {showOptimizedMetaTitle ? 
+                        <InlineStack gap='200' align='start'>
+                          <div style={{width: 20, height:20}}>
+                            <Icon
+                            source={MagicIcon}
+                            />
+                          </div>
+                          
+                          <div onClick={handleChoseOptimizedMetaTitle} style={{cursor: 'pointer'}}>
+                            <Text as='p'> 
+                              {optimizedMetaTitle}
+                            </Text>
+                          </div>
+                        </InlineStack>
+                      :
+                      null
+                      }
+                      </>
+                    }
+                  </div>
                 </Box>
                 <Box >
                   <TextField
@@ -185,6 +247,32 @@ function OptimizeMetaDataPage() {
                     autoComplete="meta description"
                     showCharacterCount
                   />
+
+                  <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
+                    {loadingOptimizedMetaData ? 
+                      <Spinner accessibilityLabel="Loading optimized meta data" size="small" />
+                    :
+                      <>
+                      {showOptimizedMetaDescription ?
+                        <InlineStack gap='200' align='start'>
+                          <div style={{width: 20, height:20}}>
+                            <Icon
+                            source={MagicIcon}
+                            />
+                          </div>
+
+                          <div onClick={handleChoseOptimizedMetaDescription} style={{width: '92%', cursor: 'pointer'}}>
+                            <Text as='p'> 
+                              {optimizedMetaDescription}
+                            </Text>
+                          </div>
+                        </InlineStack>
+                      :
+                        null
+                      }
+                      </>
+                    }
+                  </div>
                 </Box>
 
                 <BlockStack gap='200'>
@@ -224,7 +312,6 @@ function OptimizeMetaDataPage() {
                   <Text as='span'>Click to add these suggested keywords for our AI engine:</Text>
                   <InlineStack gap='200' align='start'>
                     <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-
                       <Icon
                         source={MagicIcon}
                       />
@@ -285,7 +372,7 @@ function OptimizeMetaDataPage() {
 
                           <div style={{ color: 'var(--p-color-text-link)' }}>
                             <Text as='h3' variant="headingLg" fontWeight='regular'>
-                              {metaTittle}
+                              {metaTitle}
                             </Text>
                           </div>
 
@@ -355,7 +442,7 @@ function OptimizeMetaDataPage() {
                 </BlockStack>
               </InlineStack>
               <Box paddingBlockStart='100'>
-                <Button fullWidth variant='primary' icon={MagicIcon} size='medium'>
+                <Button onClick={handleFetchOptimizedMetaData} fullWidth variant='primary' icon={MagicIcon} size='medium'>
                   Generate
                 </Button>
               </Box>

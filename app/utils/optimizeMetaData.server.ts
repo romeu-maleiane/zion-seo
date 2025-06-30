@@ -15,6 +15,13 @@ export const optimizeMetaData = async ({
     metaTitle, 
     metaDescription }: OptimizeMetaDataType): Promise<OptimizedMetaDataOutput> => {
 
+    if (!productTitle) {
+    throw new Error('Product title not provided');
+    }
+    if (!keywords) {
+    throw new Error('Keywords not provided');
+    }
+
     try {
         const options: Options = { endpoint: AZURE_ENDPOINT, apiKey: AZURE_API_KEY, deployment: AZURE_DEPLOYMENT_NAME, apiVersion: AZURE_API_VERSION }
         const client = new AzureOpenAI(options)
@@ -71,7 +78,7 @@ export const optimizeMetaData = async ({
             status: 'success'
         }
     } catch (error) {
-        console.error('OptimeMetaData error:', error)
+        console.error('Optime Meta Data error:', error)
         return {
             optimizedMetaTitle: null, 
             optimizedMetaDescription: null,
