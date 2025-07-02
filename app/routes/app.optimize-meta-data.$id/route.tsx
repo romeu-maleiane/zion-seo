@@ -15,21 +15,22 @@ import { fetchOptimizedMetaData } from 'app/utils/fetchOptimizedMetData.client';
 import PreviewInput from 'app/Components/previewInput';
 import KeywordInput from 'app/Components/keywordInput';
 import KeywordSuggestionBlock from 'app/Components/KeywordSuggestionBlock';
+import { updateAiCredits } from 'app/utils/updateaicredits.client';
 
 
 type Data = {
   productData: {
     productId: string;
     productImage: string | null;
-    productPrice: string | null; 
+    productPrice: string | null;
     title: string;
     currentMetaTitle: string;
     currentMetaDescription: string;
     createdAt: Date | string;
   }
-  storeId: string;
+  shopId: string;
   aiCredits: number | null;
-  keywords: string[] 
+  suggestedKeywordsFromData: string[]
 }
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -63,11 +64,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       }
     })
 
-    if(!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
+    if (!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = /*await suggestKeywords({ productTitle: productData?.title || ''})*/ { suggestedKeywords: [], status: '' } 
+    const keywordsData = /*await suggestKeywords({ productTitle: productData?.title || ''})*/ { suggestedKeywords: ['the best', 'top', 'popular', 'trending', 'new', 'exclusive'], status: '' }
 
-    if(keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
+    if (keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
     const storeBalance = await prisma.store.findUnique({
       where: { storeId: shopData.data.shop.id },
@@ -77,11 +78,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     })
 
 
-    return Response.json({ 
-      productData, 
-      storeId: shopData.data.shop.id, 
+    return Response.json({
+      productData,
+      shopId: shopData.data.shop.id,
       aiCredits: storeBalance?.aiCredits,
-      keywords: keywordsData.suggestedKeywords || [] 
+      suggestedKeywordsFromData: keywordsData.suggestedKeywords || []
     }, { status: 200 })
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
@@ -93,6 +94,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     return Response.json({ message: "An error occurred" }, { status: 500 });
   }
 }
+
+
 function OptimizeMetaDataPage() {
   const data: Data = useLoaderData()
   const [metaTitle, setMetaTitle] = useState<string>('')
@@ -104,15 +107,17 @@ function OptimizeMetaDataPage() {
   const [keyWordInputValue, setKeyWordInputValue] = useState<string>('')
   const [keyWords, setKeyWords] = useState<Array<string>>([])
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
+  const [credits, setCredits] = useState<number>(0)
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
-  const { productData, aiCredits, keywords } = data
+  const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
 
 
   useEffect(() => {
     setMetaDescription(productData?.currentMetaDescription || '')
     setMetaTitle(productData?.currentMetaTitle || '')
-    setSuggestedKeyWords(keywords)
-  }, [productData, keywords])
+    setSuggestedKeyWords(suggestedKeywordsFromData)
+    setCredits(aiCredits || 0)
+  }, [aiCredits, productData?.currentMetaDescription, productData?.currentMetaTitle, suggestedKeywordsFromData])
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
   const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])
@@ -120,8 +125,8 @@ function OptimizeMetaDataPage() {
 
   const handleAddKeyWord = useCallback(() => {
     const arrayOfKeyWords = keyWordInputValue.split(',')
-      .map(keyWord => keyWord.trim())
-      .filter(keyWord => keyWord.length > 0)
+      .map(keyword => keyword.trim())
+      .filter(keyword => keyword.length > 0)
 
     setKeyWordInputValue('')
 
@@ -145,37 +150,52 @@ function OptimizeMetaDataPage() {
     setSuggestedKeyWords(prev => prev.filter((_, i) => i !== index))
   }, [suggestedKeyWords])
 
-  const handleFetchOptimizedMetaData = useCallback( async() => {
+  const handleFetchOptimizedMetaData = useCallback(async () => {
     try {
+      const costPerUsage = 8
+      if (credits - costPerUsage < 0) return shopify.toast.show('Insufficient credits!', 
+        {  duration: 5000,}
+      );
+
+      if(keyWords.length === 0) return shopify.toast.show('Keywords required!', 
+        {  duration: 5000,}
+      );
+
       setLoadingOptimizedMetaData(true)
-  
-      const stringOfKeywords = keywords.join(`, `)
-      console.log('stringOfKeywords: ',stringOfKeywords)
-  
-      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaDescription:productData.currentMetaDescription, metaTitle: productData.currentMetaDescription})
-      if(!optimizedMetaData) throw new Error("An error occured fetching optimized meta mata");
+
+      const stringOfKeywords = keyWords.join(`, `)
+
+      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaDescription: productData.currentMetaDescription, metaTitle: productData.currentMetaDescription })
       
+      if (!optimizedMetaData)throw new Error("An error occured fetching optimized meta data");
+      
+      const newAiCredits = await updateAiCredits({ shopId, aiCredits: credits || 0, creditsToBeSubtracted: costPerUsage })
+      if (!newAiCredits) throw new Error("An error occured updating aiCredits");
+
       setOptimizedMetaTitle(optimizedMetaData.optimizedMetaTitle)
       setOptimizedMetaDescription(optimizedMetaData.optimizedMetaDescription)
-      
+      setCredits(newAiCredits?.aiCredits || 0)
+
       setShowOptimizedMetaTitle(true)
       setShowOptimizedMetaDescription(true)
 
       setLoadingOptimizedMetaData(false)
     } catch (error) {
+      console.error('handle fetch optimized metaData error: ', error)
       setLoadingOptimizedMetaData(false)
+      shopify.toast.show('Server Error!', { duration: 5000, isError: true })
     }
-  },[keywords, productData])
+  }, [credits, keyWords, productData.currentMetaDescription, productData.title, shopId])
 
   const handleChoseOptimizedMetaTitle = useCallback(() => {
     setMetaTitle(optimizedMetaTitle)
     setShowOptimizedMetaTitle(false)
-  },[optimizedMetaTitle])
+  }, [optimizedMetaTitle])
 
   const handleChoseOptimizedMetaDescription = useCallback(() => {
     setMetaDescription(optimizedMetaDescription)
     setShowOptimizedMetaDescription(false)
-  },[optimizedMetaDescription])
+  }, [optimizedMetaDescription])
 
   return (
     <Page title={`${productData.title}`}>
@@ -209,29 +229,29 @@ function OptimizeMetaDataPage() {
                     autoComplete="meta title"
                     showCharacterCount
                   />
-                  
+
                   <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                    {loadingOptimizedMetaData ? 
+                    {loadingOptimizedMetaData ?
                       <Spinner accessibilityLabel="Loading optimized meta data" size="small" />
-                    :
-                      <>
-                      {showOptimizedMetaTitle ? 
-                        <InlineStack gap='200' align='start'>
-                          <div style={{width: 20, height:20}}>
-                            <Icon
-                            source={MagicIcon}
-                            />
-                          </div>
-                          
-                          <div onClick={handleChoseOptimizedMetaTitle} style={{cursor: 'pointer'}}>
-                            <Text as='p'> 
-                              {optimizedMetaTitle}
-                            </Text>
-                          </div>
-                        </InlineStack>
                       :
-                      null
-                      }
+                      <>
+                        {showOptimizedMetaTitle ?
+                          <InlineStack gap='200' align='start'>
+                            <div style={{ width: 20, height: 20 }}>
+                              <Icon
+                                source={MagicIcon}
+                              />
+                            </div>
+
+                            <div onClick={handleChoseOptimizedMetaTitle} style={{ cursor: 'pointer' }}>
+                              <Text as='p'>
+                                {optimizedMetaTitle}
+                              </Text>
+                            </div>
+                          </InlineStack>
+                          :
+                          null
+                        }
                       </>
                     }
                   </div>
@@ -249,33 +269,33 @@ function OptimizeMetaDataPage() {
                   />
 
                   <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                    {loadingOptimizedMetaData ? 
+                    {loadingOptimizedMetaData ?
                       <Spinner accessibilityLabel="Loading optimized meta data" size="small" />
-                    :
-                      <>
-                      {showOptimizedMetaDescription ?
-                        <InlineStack gap='200' align='start'>
-                          <div style={{width: 20, height:20}}>
-                            <Icon
-                            source={MagicIcon}
-                            />
-                          </div>
-
-                          <div onClick={handleChoseOptimizedMetaDescription} style={{width: '92%', cursor: 'pointer'}}>
-                            <Text as='p'> 
-                              {optimizedMetaDescription}
-                            </Text>
-                          </div>
-                        </InlineStack>
                       :
-                        null
-                      }
+                      <>
+                        {showOptimizedMetaDescription ?
+                          <InlineStack gap='200' align='start'>
+                            <div style={{ width: 20, height: 20 }}>
+                              <Icon
+                                source={MagicIcon}
+                              />
+                            </div>
+
+                            <div onClick={handleChoseOptimizedMetaDescription} style={{ width: '92%', cursor: 'pointer' }}>
+                              <Text as='p'>
+                                {optimizedMetaDescription}
+                              </Text>
+                            </div>
+                          </InlineStack>
+                          :
+                          null
+                        }
                       </>
                     }
                   </div>
                 </Box>
 
-                <KeywordInput 
+                <KeywordInput
                   keyWordInputValue={keyWordInputValue}
                   keyWords={keyWords}
                   handleOnChangeKeyWordInputValue={handleOnChangeKeyWordInputValue}
@@ -283,9 +303,9 @@ function OptimizeMetaDataPage() {
                   handleRemoveKeyWord={handleRemoveKeyWord}
                 />
 
-                <KeywordSuggestionBlock 
-                  suggestedKeyWords={suggestedKeyWords} 
-                  handleAddSuggestedKeyWord={handleAddSuggestedKeyWord} 
+                <KeywordSuggestionBlock
+                  suggestedKeyWords={suggestedKeyWords}
+                  handleAddSuggestedKeyWord={handleAddSuggestedKeyWord}
                 />
 
                 <InlineStack align='end'>
@@ -295,8 +315,8 @@ function OptimizeMetaDataPage() {
             </Form>
           </Card>
 
-          <PreviewInput productTitle={productData.title} productImage={productData.productImage || ''} productPrice={productData.productPrice || '10.00'}  metaTitle={metaTitle} metaDescription={metaDescription} />
-        
+          <PreviewInput productTitle={productData.title} productImage={productData.productImage || ''} productPrice={productData.productPrice || '10.00'} metaTitle={metaTitle} metaDescription={metaDescription} />
+
         </Layout.Section>
         <Layout.Section variant="oneThird">
           <Card  >
@@ -313,12 +333,12 @@ function OptimizeMetaDataPage() {
                 </BlockStack>
               </InlineStack>
               <Box paddingBlockStart='100'>
-                <Button onClick={handleFetchOptimizedMetaData} fullWidth variant='primary' icon={MagicIcon} size='medium'>
+                <Button onClick={async () => await handleFetchOptimizedMetaData()} fullWidth variant='primary' icon={MagicIcon} size='medium'>
                   Generate
                 </Button>
               </Box>
               <InlineStack align='space-between'>
-                <Text as='span'>{aiCredits} Credits available</Text>
+                <Text as='span'>{credits} Credits available</Text>
                 <div className='ai-text-color'>
                   <Link removeUnderline url='sasa'>Buy Credits</Link>
                 </div>

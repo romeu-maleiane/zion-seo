@@ -19,7 +19,8 @@ function KeywordInput({ keyWordInputValue, keyWords, handleOnChangeKeyWordInputV
                         label="Provide keywords for our AI"
                         type="text"
                         placeholder="e.g. organic cotton, eco-friendly, summer collection"
-                        autoComplete="Provide keywords for our AI"
+                        autoComplete="off"
+                        error={false}
                         requiredIndicator
                     />
                 </div>

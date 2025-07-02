@@ -9,7 +9,6 @@ export const fetchOptimizedMetaData = async ({
 
     try {
         const formData = new FormData()
-        console.log('Keywords :', keywords)
 
         formData.append('productTitle', productTitle)
         formData.append('keywords', keywords)
@@ -21,10 +20,10 @@ export const fetchOptimizedMetaData = async ({
             body: formData
         })
 
+        if (res.status === 500) throw new Error('An error occured fetching optimizedMetaData')
+
         const optimizedMetaData = await res.json()
-
-        if (optimizedMetaData?.status === 'error') throw new Error('An error occured fetching optimizedMetaData')
-
+        
         return optimizedMetaData
     } catch (error) {
         console.error('fetch Optimized Meta Data Error: ', error)
