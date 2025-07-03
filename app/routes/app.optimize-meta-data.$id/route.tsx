@@ -107,6 +107,7 @@ function OptimizeMetaDataPage() {
   const [keyWordInputValue, setKeyWordInputValue] = useState<string>('')
   const [keyWords, setKeyWords] = useState<Array<string>>([])
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
+  const [isMissingKeywords, setIsMissingKeywords] = useState<boolean>(false)
   const [credits, setCredits] = useState<number>(0)
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
   const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
@@ -121,7 +122,10 @@ function OptimizeMetaDataPage() {
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
   const handleOnChangeMetaDescription = useCallback((value: string) => setMetaDescription(value), [])
-  const handleOnChangeKeyWordInputValue = useCallback((value: string) => setKeyWordInputValue(value), [])
+  const handleOnChangeKeyWordInputValue = useCallback((value: string) => {
+    setKeyWordInputValue(value)
+    setIsMissingKeywords(false)
+  }, [])
 
   const handleAddKeyWord = useCallback(() => {
     const arrayOfKeyWords = keyWordInputValue.split(',')
@@ -153,22 +157,26 @@ function OptimizeMetaDataPage() {
   const handleFetchOptimizedMetaData = useCallback(async () => {
     try {
       const costPerUsage = 8
-      if (credits - costPerUsage < 0) return shopify.toast.show('Insufficient credits!', 
-        {  duration: 5000,}
+      if (credits - costPerUsage < 0) return shopify.toast.show('Insufficient credits!',
+        { duration: 5000, isError: true }
       );
 
-      if(keyWords.length === 0) return shopify.toast.show('Keywords required!', 
-        {  duration: 5000,}
-      );
+
+      if (keyWords.length === 0) {
+        setIsMissingKeywords(true)
+        return shopify.toast.show('Keywords required!',
+          { duration: 5000, isError: true }
+        )
+      }
 
       setLoadingOptimizedMetaData(true)
 
       const stringOfKeywords = keyWords.join(`, `)
 
       const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaDescription: productData.currentMetaDescription, metaTitle: productData.currentMetaDescription })
-      
-      if (!optimizedMetaData)throw new Error("An error occured fetching optimized meta data");
-      
+
+      if (!optimizedMetaData) throw new Error("An error occured fetching optimized meta data");
+
       const newAiCredits = await updateAiCredits({ shopId, aiCredits: credits || 0, creditsToBeSubtracted: costPerUsage })
       if (!newAiCredits) throw new Error("An error occured updating aiCredits");
 
@@ -226,7 +234,7 @@ function OptimizeMetaDataPage() {
                     label="Meta Title"
                     type="text"
                     maxLength={70}
-                    autoComplete="meta title"
+                    autoComplete="off"
                     showCharacterCount
                   />
 
@@ -264,7 +272,7 @@ function OptimizeMetaDataPage() {
                     type="text"
                     maxLength={165}
                     multiline={3}
-                    autoComplete="meta description"
+                    autoComplete="off"
                     showCharacterCount
                   />
 
@@ -301,6 +309,7 @@ function OptimizeMetaDataPage() {
                   handleOnChangeKeyWordInputValue={handleOnChangeKeyWordInputValue}
                   handleAddKeyWord={handleAddKeyWord}
                   handleRemoveKeyWord={handleRemoveKeyWord}
+                  handleError={isMissingKeywords}
                 />
 
                 <KeywordSuggestionBlock
@@ -333,7 +342,7 @@ function OptimizeMetaDataPage() {
                 </BlockStack>
               </InlineStack>
               <Box paddingBlockStart='100'>
-                <Button onClick={async () => await handleFetchOptimizedMetaData()} fullWidth variant='primary' icon={MagicIcon} size='medium'>
+                <Button loading={loadingOptimizedMetaData} onClick={async () => await handleFetchOptimizedMetaData()} fullWidth variant='primary' icon={MagicIcon} size='medium'>
                   Generate
                 </Button>
               </Box>
