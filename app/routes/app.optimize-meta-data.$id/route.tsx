@@ -220,6 +220,7 @@ function OptimizeMetaDataPage() {
       setLoadingUpdateProductMetaData(false)
     } catch (error) {
       setLoadingUpdateProductMetaData(false)
+      shopify.toast.show('Server Error!', { isError: true })
       console.error('Handle Update Product Error: ', error)
     }
   },[metaDescription, metaTitle, productData.productId])
