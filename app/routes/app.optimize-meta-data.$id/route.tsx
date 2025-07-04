@@ -16,6 +16,7 @@ import PreviewInput from 'app/Components/previewInput';
 import KeywordInput from 'app/Components/keywordInput';
 import KeywordSuggestionBlock from 'app/Components/KeywordSuggestionBlock';
 import { updateAiCredits } from 'app/utils/updateaicredits.client';
+import { postUpdateMetaData } from 'app/utils/postUpdateMetaData.client';
 
 
 type Data = {
@@ -110,6 +111,7 @@ function OptimizeMetaDataPage() {
   const [isMissingKeywords, setIsMissingKeywords] = useState<boolean>(false)
   const [credits, setCredits] = useState<number>(0)
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
+  const [loadingUpdateProductMetaData, setLoadingUpdateProductMetaData] = useState<boolean>(false)
   const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
 
 
@@ -205,6 +207,23 @@ function OptimizeMetaDataPage() {
     setShowOptimizedMetaDescription(false)
   }, [optimizedMetaDescription])
 
+  const handleUpdateProduct = useCallback( async() => {
+    try {
+      setLoadingUpdateProductMetaData(true)
+      
+      const newMetaData = await postUpdateMetaData({ productId: productData.productId, newMetaTitle: metaTitle, newMetaDescription: metaDescription })
+      
+      if(!newMetaData) throw new Error("An error occured posting new meta data");
+      
+      shopify.toast.show('Product updated!')
+
+      setLoadingUpdateProductMetaData(false)
+    } catch (error) {
+      setLoadingUpdateProductMetaData(false)
+      console.error('Handle Update Product Error: ', error)
+    }
+  },[metaDescription, metaTitle, productData.productId])
+
   return (
     <Page title={`${productData.title}`}>
       <Layout>
@@ -217,7 +236,7 @@ function OptimizeMetaDataPage() {
               </Box>
             </Box>
 
-            <Form onSubmit={() => { }}>
+            <Form onSubmit={handleUpdateProduct}>
               <FormLayout>
                 <BlockStack gap='100'>
                   <Text as='span'>Product Image</Text>
@@ -318,7 +337,7 @@ function OptimizeMetaDataPage() {
                 />
 
                 <InlineStack align='end'>
-                  <Button size="large" submit>Post</Button>
+                  <Button loading={loadingUpdateProductMetaData} size="large" submit>Post</Button>
                 </InlineStack>
               </FormLayout>
             </Form>
