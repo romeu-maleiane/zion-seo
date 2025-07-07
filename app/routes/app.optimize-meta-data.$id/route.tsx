@@ -18,6 +18,7 @@ import KeywordSuggestionBlock from 'app/Components/KeywordSuggestionBlock';
 import { updateAiCredits } from 'app/utils/updateaicredits.client';
 import { postUpdateMetaData } from 'app/utils/postUpdateMetaData.client';
 import SaveBarComponent from 'app/Components/saveBar';
+import Footer from 'app/Components/footer.component';
 
 
 type Data = {
@@ -68,7 +69,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if (!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = /*await suggestKeywords({ productTitle: productData?.title || ''})*/ { suggestedKeywords: ['the best', 'top', 'popular', 'trending', 'new', 'exclusive'], status: '' }
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
 
     if (keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -397,6 +398,8 @@ function OptimizeMetaDataPage() {
           </Card>
         </Layout.Section>
       </Layout>
+
+      <Footer/>
     </Page>
   )
 }
