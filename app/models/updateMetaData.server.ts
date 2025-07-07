@@ -18,7 +18,12 @@ export const updateMetaData = async ({ productId, newMetaTitle, newMetaDescripti
 
         if (!updatedMetaData) throw new Error("Product not found");
 
-        const newMetaData: { generatedMetaTitle: string | null, generatedMetaDescription: string | null } = updatedMetaData
+        const newMetaData: { 
+            generatedMetaTitle: string | null, 
+            generatedMetaDescription: string | null, 
+            currentMetaTitle: string | null, 
+            currentMetaDescription: string | null 
+        } = updatedMetaData
 
         return newMetaData
     } catch (error) {

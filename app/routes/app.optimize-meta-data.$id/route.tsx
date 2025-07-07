@@ -17,6 +17,7 @@ import KeywordInput from 'app/Components/keywordInput';
 import KeywordSuggestionBlock from 'app/Components/KeywordSuggestionBlock';
 import { updateAiCredits } from 'app/utils/updateaicredits.client';
 import { postUpdateMetaData } from 'app/utils/postUpdateMetaData.client';
+import SaveBarComponent from 'app/Components/saveBar';
 
 
 type Data = {
@@ -101,6 +102,8 @@ function OptimizeMetaDataPage() {
   const data: Data = useLoaderData()
   const [metaTitle, setMetaTitle] = useState<string>('')
   const [metaDescription, setMetaDescription] = useState<string>('')
+  const [originalMetaTitle, setOriginalMetaTitle] = useState<string>('')
+  const [originalMetaDescription, setOriginalMetaDescription] = useState<string>('')
   const [optimizedMetaTitle, setOptimizedMetaTitle] = useState<string>('')
   const [optimizedMetaDescription, setOptimizedMetaDescription] = useState<string>('')
   const [showOptimizedMetaTitle, setShowOptimizedMetaTitle] = useState<boolean>(false)
@@ -116,10 +119,13 @@ function OptimizeMetaDataPage() {
 
 
   useEffect(() => {
-    setMetaDescription(productData?.currentMetaDescription || '')
     setMetaTitle(productData?.currentMetaTitle || '')
+    setMetaDescription(productData?.currentMetaDescription || '')
     setSuggestedKeyWords(suggestedKeywordsFromData)
     setCredits(aiCredits || 0)
+
+    setOriginalMetaTitle(productData?.currentMetaTitle || '')
+    setOriginalMetaDescription(productData?.currentMetaDescription || '')
   }, [aiCredits, productData?.currentMetaDescription, productData?.currentMetaTitle, suggestedKeywordsFromData])
 
   const handleOnChangeMetaTitle = useCallback((value: string) => setMetaTitle(value), [])
@@ -154,6 +160,7 @@ function OptimizeMetaDataPage() {
     })
 
     setSuggestedKeyWords(prev => prev.filter((_, i) => i !== index))
+    setIsMissingKeywords(false)
   }, [suggestedKeyWords])
 
   const handleFetchOptimizedMetaData = useCallback(async () => {
@@ -207,14 +214,17 @@ function OptimizeMetaDataPage() {
     setShowOptimizedMetaDescription(false)
   }, [optimizedMetaDescription])
 
-  const handleUpdateProduct = useCallback( async() => {
+  const handleUpdateProduct = useCallback(async () => {
     try {
       setLoadingUpdateProductMetaData(true)
-      
+
       const newMetaData = await postUpdateMetaData({ productId: productData.productId, newMetaTitle: metaTitle, newMetaDescription: metaDescription })
-      
-      if(!newMetaData) throw new Error("An error occured posting new meta data");
-      
+
+      if (!newMetaData) throw new Error("An error occured posting new meta data");
+
+      setOriginalMetaTitle(newMetaData.currentMetaTitle)
+      setOriginalMetaDescription(newMetaData.currentMetaDescription)
+
       shopify.toast.show('Product updated!')
 
       setLoadingUpdateProductMetaData(false)
@@ -223,10 +233,21 @@ function OptimizeMetaDataPage() {
       shopify.toast.show('Server Error!', { isError: true })
       console.error('Handle Update Product Error: ', error)
     }
-  },[metaDescription, metaTitle, productData.productId])
+  }, [metaDescription, metaTitle, productData.productId])
 
   return (
     <Page title={`${productData.title}`}>
+
+      <SaveBarComponent
+        onSave={handleUpdateProduct}
+        resetMetaTitle={setMetaTitle}
+        resetMetaDescription={setMetaDescription}
+        originalMetaTitle={originalMetaTitle}
+        originalMetaDescription={originalMetaDescription}
+        newMetaTitle={metaTitle}
+        newMetaDescription={metaDescription}
+      />
+
       <Layout>
         <Layout.Section>
           <Card>

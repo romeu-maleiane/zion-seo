@@ -204,17 +204,6 @@ export default function Index() {
     activePlan,
     aiCredits } = data
 
-  //   const shopify = useAppBridge();
-  //   const isLoading =
-  //     ["loading", "submitting"].includes(fetcher.state) &&
-  //     fetcher.formMethod === "POST";
-  //   const productId = fetcher.data?.product?.id.replace(
-  //     "gid://shopify/Product/",
-  //     "",
-  //   );
-
-
-  //   const publishProduct = () => fetcher.submit({}, { method: "POST" });
 
   return (
     <Page>
