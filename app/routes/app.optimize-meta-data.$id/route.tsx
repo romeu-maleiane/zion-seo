@@ -237,7 +237,10 @@ function OptimizeMetaDataPage() {
   }, [metaDescription, metaTitle, productData.productId])
 
   return (
-    <Page title={`${productData.title}`}>
+    <Page 
+      title={`${productData.title}`} 
+      backAction={{ content: 'Meta data optimizer', url: '/app/meta-data-optimizer' }}
+    >
 
       <SaveBarComponent
         onSave={handleUpdateProduct}
