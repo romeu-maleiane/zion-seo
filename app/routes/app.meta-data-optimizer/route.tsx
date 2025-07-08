@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
-import { Badge, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
+import { Badge, Text, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
 import CardAiSeoOptimizer from 'app/Components/cardAiSeoOptimizer'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -273,9 +273,19 @@ function MetaDataOptimizerPage() {
                             />
                         </IndexTable.Cell>
                         <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
-                        <IndexTable.Cell>{currentMetaTitle || '—'}</IndexTable.Cell>
                         <IndexTable.Cell>
-                            {currentMetaDescription || '—'}
+                            <div style={{width: '200px'}}>
+                                <Text as='p' truncate>
+                                    {currentMetaTitle || '—'}
+                                </Text>
+                            </div>
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            <div style={{width: '250px'}}>
+                                <Text as='p' truncate>
+                                    {currentMetaDescription || '—'}
+                                </Text>
+                            </div>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             {generatedMetaDescription && generatedMetaTitle

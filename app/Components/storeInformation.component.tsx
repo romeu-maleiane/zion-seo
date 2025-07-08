@@ -27,23 +27,6 @@ function StoreInformationComponent({
     noDataOfDescriptionsYet,
     noDataOfMetaDataYet, }: StoreInformationComponentType) {
 
-    // const data: Data = useLoaderData();
-
-    // console.log('Store Information Data: ', data)
-
-    // const { countOfProducts,
-    //     countOfOptimizedProducts,
-    //     countOfOptimizedDescriptions,
-    //     countOfOptimizedMetaData,
-    //     percentageAdvanceOfOptimizedProducts,
-    //     percentageAdvanceOfOptimizedDescriptions,
-    //     percentageAdvanceOfOptimizedMetaData,
-    //     noDataOfOptimizedProductsYet,
-    //     noDataOfDescriptionsYet,
-    //     noDataOfMetaDataYet,
-    // } = data;
-
-
     return (
         <Card >
             <Box paddingBlockEnd='400'>
@@ -79,8 +62,8 @@ function StoreInformationComponent({
                                 <InlineStack blockAlign='center' gap="0">
                                     {noDataOfOptimizedProductsYet
                                         ?
-                                        <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                                            No data yet
+                                        <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                            No metrics yet
                                         </Text>
                                         : <>
                                             <div style={{ width: 20, height: 20, }}>
@@ -129,8 +112,8 @@ function StoreInformationComponent({
                                 <InlineStack blockAlign='center' gap="0">
                                     {noDataOfDescriptionsYet
                                         ?
-                                        <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                                            No data yet
+                                        <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                            No metrics yet
                                         </Text>
                                         : <>
                                             <div style={{ width: 20, height: 20, }}>
@@ -179,8 +162,8 @@ function StoreInformationComponent({
                                 <InlineStack blockAlign='center' gap="0">
                                     {noDataOfMetaDataYet
                                         ?
-                                        <Text as='span' tone='base' variant="bodyLg" fontWeight='semibold'>
-                                            No data yet
+                                        <Text as='span' tone='base' variant="bodyMd" fontWeight='regular'>
+                                            No metrics yet
                                         </Text>
                                         : <>
                                             <div style={{ width: 20, height: 20, }}>
