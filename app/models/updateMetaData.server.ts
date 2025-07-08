@@ -12,7 +12,8 @@ export const updateMetaData = async ({ productId, newMetaTitle, newMetaDescripti
                 generatedMetaTitle: newMetaTitle,
                 generatedMetaDescription: newMetaDescription,
                 currentMetaTitle: newMetaTitle,
-                currentMetaDescription: newMetaDescription
+                currentMetaDescription: newMetaDescription,
+                optimizedAt: new Date()
             }
         })
 

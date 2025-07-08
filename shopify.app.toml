@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://inquiries-rate-oecd-printed.trycloudflare.com"
+application_url = "https://dedicated-noon-mode-enrolled.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-04"
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://inquiries-rate-oecd-printed.trycloudflare.com/auth/callback", "https://inquiries-rate-oecd-printed.trycloudflare.com/auth/shopify/callback", "https://inquiries-rate-oecd-printed.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://dedicated-noon-mode-enrolled.trycloudflare.com/auth/callback", "https://dedicated-noon-mode-enrolled.trycloudflare.com/auth/shopify/callback", "https://dedicated-noon-mode-enrolled.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

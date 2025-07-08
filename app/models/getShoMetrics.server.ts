@@ -68,7 +68,7 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: lastSunday, lte: lastSaturday },
+          optimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
             { generatedDescription: { not: null } },
@@ -79,7 +79,7 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: startOfThisWeek },
+          optimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
             { generatedDescription: { not: null } },
@@ -90,21 +90,21 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: lastSunday, lte: lastSaturday },
+          optimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           NOT: [{ generatedDescription: null }],
         },
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: startOfThisWeek },
+          optimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           NOT: [{ generatedDescription: null }],
         },
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: lastSunday, lte: lastSaturday },
+          optimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
             { generatedMetaTitle: { not: null } },
@@ -114,7 +114,7 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          createdAt: { gte: startOfThisWeek },
+          optimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
             { generatedMetaTitle: { not: null } },
