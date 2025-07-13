@@ -14,8 +14,8 @@
 }
 
 ._Editor {
-  min-height: 130px;
-  max-height: none;
+  height: 130px;
+  overflow-y: auto;
   line-height: 1.5;
   outline: none;
   outline-offset: none;
