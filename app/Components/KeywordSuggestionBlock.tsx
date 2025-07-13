@@ -11,7 +11,7 @@ function KeywordSuggestionBlock({ suggestedKeyWords, handleAddSuggestedKeyWord }
         <BlockStack inlineAlign='start' gap='100'>
             <Text as='span'>Click to add these suggested keywords for our AI engine:</Text>
             <InlineStack gap='200' align='start'>
-                {suggestedKeyWords ?
+                {!(suggestedKeyWords.length === 0) ?
                     <>
                         <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
                             <Icon
