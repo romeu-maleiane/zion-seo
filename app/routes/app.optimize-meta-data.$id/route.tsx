@@ -1,8 +1,7 @@
-import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Divider, Link, Spinner } from '@shopify/polaris'
+import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Layout, Page, TextField, Thumbnail, Icon, Divider, Spinner } from '@shopify/polaris'
 import {
   MagicIcon,
 } from '@shopify/polaris-icons';
-import { Image } from "@unpic/react"
 import "../styles/customStyle.css";
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import type { LoaderFunctionArgs, } from "@remix-run/node";
@@ -19,6 +18,7 @@ import { updateAiCredits } from 'app/utils/updateaicredits.client';
 import { postUpdateMetaData } from 'app/utils/postUpdateMetaData.client';
 import SaveBarComponent from 'app/Components/saveBar';
 import Footer from 'app/Components/footer.component';
+import AiFeature from 'app/Components/aiFeature';
 
 
 type Data = {
@@ -183,7 +183,7 @@ function OptimizeMetaDataPage() {
 
       const stringOfKeywords = keyWords.join(`, `)
 
-      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaDescription: productData.currentMetaDescription, metaTitle: productData.currentMetaDescription })
+      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaTitle: productData.currentMetaTitle, metaDescription: productData.currentMetaDescription,  })
 
       if (!optimizedMetaData) throw new Error("An error occured fetching optimized meta data");
 
@@ -203,7 +203,7 @@ function OptimizeMetaDataPage() {
       setLoadingOptimizedMetaData(false)
       shopify.toast.show('Server Error!', { duration: 5000, isError: true })
     }
-  }, [credits, keyWords, productData.currentMetaDescription, productData.title, shopId])
+  }, [credits, keyWords, productData.currentMetaDescription, productData.currentMetaTitle, productData.title, shopId])
 
   const handleChoseOptimizedMetaTitle = useCallback(() => {
     setMetaTitle(optimizedMetaTitle)
@@ -355,6 +355,7 @@ function OptimizeMetaDataPage() {
                   handleAddKeyWord={handleAddKeyWord}
                   handleRemoveKeyWord={handleRemoveKeyWord}
                   handleError={isMissingKeywords}
+                  isRequired={true}
                 />
 
                 <KeywordSuggestionBlock
@@ -373,32 +374,15 @@ function OptimizeMetaDataPage() {
 
         </Layout.Section>
         <Layout.Section variant="oneThird">
-          <Card  >
-            <BlockStack gap='100'>
-              <InlineStack gap='200' wrap={false}>
-                <Image src='/assets/imgs/ia.png' width={40} height={40} alt='ai image' />
-                <BlockStack>
-                  <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                    <Text as='h2' variant="headingLg" fontWeight='medium'>AI Meta title/description optimizer</Text>
-                  </div>
-                  <Text as='p'>
-                    Optimize your meta titles and meta descriptions with the power of AI
-                  </Text>
-                </BlockStack>
-              </InlineStack>
-              <Box paddingBlockStart='100'>
-                <Button loading={loadingOptimizedMetaData} onClick={async () => await handleFetchOptimizedMetaData()} fullWidth variant='primary' icon={MagicIcon} size='medium'>
-                  Generate
-                </Button>
-              </Box>
-              <InlineStack align='space-between'>
-                <Text as='span'>{credits} Credits available</Text>
-                <div className='ai-text-color'>
-                  <Link removeUnderline url='sasa'>Buy Credits</Link>
-                </div>
-              </InlineStack>
-            </BlockStack>
-          </Card>
+
+          <AiFeature 
+            title='AI Meta title/description optimizer'
+            subTitle='Optimize your meta titles and meta descriptions with the power of AI'
+            action={handleFetchOptimizedMetaData}
+            loading={loadingOptimizedMetaData}
+            aiCredits={credits}
+          />
+
         </Layout.Section>
       </Layout>
 

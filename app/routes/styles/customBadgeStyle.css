@@ -1,0 +1,39 @@
+:root {
+  --p-color-bg-fill-success-secondary-hover: #98fbac;
+}
+
+.badge-magic:hover {
+    background: var(--p-color-bg-fill-magic-secondary-hover);
+}
+
+.badge-magic {
+    cursor: pointer;
+    padding: var(--p-space-0) var(--p-space-200);
+    border-radius: var(--p-border-radius-200);
+    color: var(--p-color-text-magic-secondary);
+    background: var(--p-color-bg-fill-magic-secondary);
+}
+
+.badge-success:hover {
+    background: var(--p-color-bg-fill-success-secondary-hover);
+}
+
+.badge-success {
+    cursor: pointer;
+    padding: var(--p-space-0) var(--p-space-200);
+    border-radius: var(--p-border-radius-200);
+    color: var(--p-color-text-success);
+    background: var(--p-color-bg-fill-success-secondary);
+}
+
+.badge-base:hover {
+    background: var(--p-color-bg-fill-tertiary-hover);
+}
+
+.badge-base {
+    cursor: pointer;
+    padding: var(--p-space-0) var(--p-space-200);
+    border-radius: var(--p-border-radius-200);
+    color: var(--p-color-text-fill-tertiary);
+    background: var(--p-color-bg-fill-tertiary);
+}

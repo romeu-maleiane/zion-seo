@@ -6,28 +6,30 @@ interface KeywordSuggestionBlockType {
     handleAddSuggestedKeyWord: (index: number) => void
 }
 
-function KeywordSuggestionBlock({suggestedKeyWords, handleAddSuggestedKeyWord}: KeywordSuggestionBlockType) {
+function KeywordSuggestionBlock({ suggestedKeyWords, handleAddSuggestedKeyWord }: KeywordSuggestionBlockType) {
     return (
         <BlockStack inlineAlign='start' gap='100'>
             <Text as='span'>Click to add these suggested keywords for our AI engine:</Text>
             <InlineStack gap='200' align='start'>
-                <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                    <Icon
-                        source={MagicIcon}
-                    />
-                </div>
-                {suggestedKeyWords.map((keyWord, index) => (
-                    <div key={index} style={{ color: 'var(--p-color-bg-fill-magic-secondary)' }}>
-                        <Tag >
-                            <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                                <InlineStack gap='100'>
-                                    <span>{keyWord}</span>
-                                    <span onClick={() => handleAddSuggestedKeyWord(index)}><Icon source={PlusCircleIcon} /></span>
-                                </InlineStack>
-                            </div>
-                        </Tag>
-                    </div>
-                ))}
+                {suggestedKeyWords ?
+                    <>
+                        <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
+                            <Icon
+                                source={MagicIcon}
+                            />
+                        </div>
+                        {suggestedKeyWords.map((keyWord, index) => (
+                            <Tag key={index}>
+                                <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
+                                    <InlineStack gap='100'>
+                                        <span>{keyWord}</span>
+                                        <span onClick={() => handleAddSuggestedKeyWord(index)}><Icon source={PlusCircleIcon} /></span>
+                                    </InlineStack>
+                                </div>
+                            </Tag>
+                        ))}
+                    </>
+                : null}
             </InlineStack>
         </BlockStack>
     )

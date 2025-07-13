@@ -7,9 +7,10 @@ interface KeywordInputType {
     handleOnChangeKeyWordInputValue: (keyWord: string) => void
     handleAddKeyWord: () => void
     handleRemoveKeyWord: (index: number) => void
-    handleError: boolean
+    handleError?: boolean
+    isRequired?: boolean
 }
-function KeywordInput({ keyWordInputValue, keyWords, handleError, handleOnChangeKeyWordInputValue, handleAddKeyWord, handleRemoveKeyWord, }: KeywordInputType) {
+function KeywordInput({ keyWordInputValue, keyWords, isRequired, handleError, handleOnChangeKeyWordInputValue, handleAddKeyWord, handleRemoveKeyWord, }: KeywordInputType) {
     return (
         <BlockStack gap='200'>
             <InlineStack blockAlign='end' align='space-between'>
@@ -22,7 +23,7 @@ function KeywordInput({ keyWordInputValue, keyWords, handleError, handleOnChange
                         placeholder="e.g. organic cotton, eco-friendly, summer collection"
                         autoComplete="off"
                         error={handleError}
-                        requiredIndicator
+                        requiredIndicator={isRequired}
                     />
                 </div>
                 <div style={{ width: '13%' }}>

@@ -37,3 +37,22 @@ export type SuggestedKeywordsOutput = {
     suggestedKeywords: string[] | null;
     status: string;
 }
+
+// types for generateDescription function
+export interface GenerateDescriptionsProps {
+    productTitle: string
+    brandName: string
+    productDetails: string
+    keywords?: string
+}
+
+export type Descriptions = {
+    descriptionOne: string
+    descriptionTwo: string
+}
+
+export type GenerateDescriptionsOutput = {
+    descriptionOne: string | null;
+    descriptionTwo: string | null;
+    status: string;
+}

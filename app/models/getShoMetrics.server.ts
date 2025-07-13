@@ -68,7 +68,8 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: lastSunday, lte: lastSaturday },
+          descriptionOptimizedAt: { gte: lastSunday, lte: lastSaturday },
+          metaDataOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
             { generatedDescription: { not: null } },
@@ -79,7 +80,8 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: startOfThisWeek },
+          descriptionOptimizedAt: { gte: startOfThisWeek },
+          metaDataOptimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
             { generatedDescription: { not: null } },
@@ -90,21 +92,21 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: lastSunday, lte: lastSaturday },
+          descriptionOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           NOT: [{ generatedDescription: null }],
         },
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: startOfThisWeek },
+          descriptionOptimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           NOT: [{ generatedDescription: null }],
         },
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: lastSunday, lte: lastSaturday },
+          metaDataOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
             { generatedMetaTitle: { not: null } },
@@ -114,7 +116,7 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
       }),
       prisma.product.count({
         where: {
-          optimizedAt: { gte: startOfThisWeek },
+          metaDataOptimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
             { generatedMetaTitle: { not: null } },
