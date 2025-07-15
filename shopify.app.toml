@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://pray-acute-lips-mixture.trycloudflare.com"
+application_url = "https://power-tee-firewall-occasionally.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-04"
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://pray-acute-lips-mixture.trycloudflare.com/auth/callback", "https://pray-acute-lips-mixture.trycloudflare.com/auth/shopify/callback", "https://pray-acute-lips-mixture.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://power-tee-firewall-occasionally.trycloudflare.com/auth/callback", "https://power-tee-firewall-occasionally.trycloudflare.com/auth/shopify/callback", "https://power-tee-firewall-occasionally.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

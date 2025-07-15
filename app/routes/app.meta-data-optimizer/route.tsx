@@ -118,7 +118,7 @@ function MetaDataOptimizerPage() {
     const onHandleCancel = () => {
         setQueryValue('')
         setPage(0)
-        handleGetNextProducts({nextPage: 0})
+        handleGetNextProducts({ nextPage: 0 })
     };
 
 
@@ -153,7 +153,7 @@ function MetaDataOptimizerPage() {
             setOnlyNotOptimizedProducts(false)
             setPage(0)
             setSearchLoading(true)
-            handleGetNextProducts({nextPage: 0, query: debouncedQuery, })
+            handleGetNextProducts({ nextPage: 0, query: debouncedQuery, })
             setSearchLoading(false)
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,7 +198,7 @@ function MetaDataOptimizerPage() {
         });
     }
 
-    const handleGetNextProducts = useCallback(async ({nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false}: handleGetNextProductsType) => {
+    const handleGetNextProducts = useCallback(async ({ nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false }: handleGetNextProductsType) => {
         try {
             setLoading(true)
 
@@ -233,7 +233,7 @@ function MetaDataOptimizerPage() {
     useEffect(() => {
         setPage(0)
         setSearchLoading(true)
-        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
         setSearchLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery])
@@ -241,7 +241,7 @@ function MetaDataOptimizerPage() {
     useEffect(() => {
         setPage(0)
         setSearchLoading(true)
-        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
         setSearchLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onlyNotOptimizedProducts, onlyOptimizedProducts])
@@ -272,16 +272,23 @@ function MetaDataOptimizerPage() {
                                 alt='Product image'
                             />
                         </IndexTable.Cell>
-                        <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
                         <IndexTable.Cell>
-                            <div style={{width: '200px'}}>
+                            <Link
+                                dataPrimaryLink
+                                url={`/app/optimize-meta-data/${productId.replace('gid://shopify/Product/', '')}`}
+                            >
+                                {title || '—'}
+                            </Link>
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            <div style={{ width: '200px' }}>
                                 <Text as='p' truncate>
                                     {currentMetaTitle || '—'}
                                 </Text>
                             </div>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
-                            <div style={{width: '250px'}}>
+                            <div style={{ width: '250px' }}>
                                 <Text as='p' truncate>
                                     {currentMetaDescription || '—'}
                                 </Text>
@@ -364,7 +371,7 @@ function MetaDataOptimizerPage() {
                                 onNext: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage + 1
-                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
                                         return newPage
                                     })
                                 },
@@ -372,7 +379,7 @@ function MetaDataOptimizerPage() {
                                 onPrevious: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage - 1
-                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
                                         return newPage
                                     })
                                 }

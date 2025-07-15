@@ -14,14 +14,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         if ((typeof productId) !== 'string' || !productId) throw new Error("Missing or invalid productId");
         if ((typeof newProductDescription) !== 'string' || !newProductDescription) throw new Error("Missing or invalid newProductDescription");
 
-        const newProductDescriptionHtml = `<p>${newProductDescription}</p>`
-
         const response = await admin.graphql(
             `#graphql
-            mutation UpdateProduct($productId: ID!, $newProductDescriptionHtml: String!) {
+            mutation UpdateProduct($productId: ID!, $newProductDescription: String!) {
                 productUpdate(product: {
                     id: $productId,
-                    descriptionHtml: $newProductDescriptionHtml
+                    descriptionHtml: $newProductDescription
                 }) {
                     product {
                         id
@@ -36,7 +34,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             {
                 variables: {
                     productId,
-                    newProductDescriptionHtml,
+                    newProductDescription,
                 }
             }
         )

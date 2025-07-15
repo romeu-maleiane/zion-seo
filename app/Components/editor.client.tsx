@@ -1,5 +1,5 @@
 import { BlockStack, Box, Text, Icon, InlineStack, Popover, OptionList } from '@shopify/polaris';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CaretDownIcon,
   ListBulletedIcon,
@@ -73,6 +73,11 @@ function Editor({ type, content, handleEditValue }: EditorProps) {
       }
     }
   })
+
+  useEffect(() => {
+    editor?.commands.setContent(content)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[content])
 
   const handleOnchangeValue = useCallback((value: string[]) => {
     if (!editor) return

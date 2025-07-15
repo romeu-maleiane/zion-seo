@@ -65,7 +65,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if (!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = /*await suggestKeywords({ productTitle: productData?.title || ''})*/ { suggestedKeywords: [], status: '' }
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
 
     if (keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -165,6 +165,7 @@ function OptimizeProductDescriptionPage() {
       .filter(productDetail => productDetail.length > 0)
 
     setProductDetailInputValue('')
+    setIsMissingProductDetails(false)
 
     setProductDetails(prev => {
       const newProductDetails = new Set([...prev, ...arrayOfProductDetails])
@@ -276,6 +277,13 @@ function OptimizeProductDescriptionPage() {
 
   const handleUpdateProduct = useCallback(async () => {
     try {
+
+      if (!description) {
+        return shopify.toast.show('Product description required!',
+          { duration: 5000, isError: true }
+        )
+      }
+
       setLoadingUpdateProductDescription(true)
 
       const newDescription = await postUpdateProductDescription({ productId: productData.productId, newProductDescription: description })
@@ -296,7 +304,7 @@ function OptimizeProductDescriptionPage() {
   return (
     <Page
       title={`${productData.title}`}
-      backAction={{ content: 'Description optimizer', url: '/app/description-optimizer' }}
+      backAction={{ content: 'Description generator', url: '/app/description-generator' }}
     >
 
       <Layout>
@@ -309,7 +317,7 @@ function OptimizeProductDescriptionPage() {
               </Box>
             </Box>
 
-            <Form onSubmit={handleUpdateProduct}>
+            <Form preventDefault implicitSubmit={false}  onSubmit={() => {}}>
               <FormLayout>
                 <BlockStack gap='100'>
                   <Text as='span'>Product Image</Text>
@@ -340,7 +348,7 @@ function OptimizeProductDescriptionPage() {
                         onChange={handleOnChangeProductDetailInputValue}
                         label="Product details"
                         type="text"
-                        placeholder="e.g. organic cotton, eco-friendly, summer collection"
+                        placeholder="e.g. lightweight, waterproof, breathable, stretch fabric"
                         autoComplete="off"
                         error={isMissingProductDetails}
                         requiredIndicator
@@ -380,7 +388,7 @@ function OptimizeProductDescriptionPage() {
                 />
 
                 <InlineStack align='end'>
-                  <Button loading={loadingUpdateProductDescription} size="large" submit>Post</Button>
+                  <Button loading={loadingUpdateProductDescription} size="large" onClick={handleUpdateProduct}>Post</Button>
                 </InlineStack>
               </FormLayout>
             </Form>
@@ -430,7 +438,7 @@ function OptimizeProductDescriptionPage() {
                               <CustomBadge onClick={() => handleSetSelectedDescription(desc.type)} text='Select' tone='magic' />
                             }
 
-                            {loadingFetchGeneratedDescriptions ?? <Spinner accessibilityLabel="Loading generate description" size="small" />}
+                            {loadingFetchGeneratedDescriptions ? <Spinner accessibilityLabel="Loading generate description" size="small" /> : null}
                           </InlineStack>
 
                           <ClientOnly fallback={false}>

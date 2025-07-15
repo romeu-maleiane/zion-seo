@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
-import { Badge, ChoiceList, Frame, Icon, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
+import { Badge, ChoiceList, Frame, Icon, Text, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
 import CardAiSeoOptimizer from 'app/Components/cardAiSeoOptimizer'
 import { useCallback, useEffect, useState } from 'react'
 import { TextBlockIcon } from '@shopify/polaris-icons';
@@ -112,7 +112,7 @@ function MetaDataOptimizerPage() {
     const onHandleCancel = () => {
         setQueryValue('')
         setPage(0)
-        handleGetNextProducts({nextPage: 0})
+        handleGetNextProducts({ nextPage: 0 })
     };
 
 
@@ -147,7 +147,7 @@ function MetaDataOptimizerPage() {
             setOnlyNotOptimizedProducts(false)
             setPage(0)
             setSearchLoading(true)
-            handleGetNextProducts({nextPage: 0, query: debouncedQuery, })
+            handleGetNextProducts({ nextPage: 0, query: debouncedQuery, })
             setSearchLoading(false)
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +192,7 @@ function MetaDataOptimizerPage() {
         });
     }
 
-    const handleGetNextProducts = useCallback(async ({nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false}: handleGetNextProductsType) => {
+    const handleGetNextProducts = useCallback(async ({ nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false }: handleGetNextProductsType) => {
         try {
             setLoading(true)
 
@@ -227,7 +227,7 @@ function MetaDataOptimizerPage() {
     useEffect(() => {
         setPage(0)
         setSearchLoading(true)
-        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
         setSearchLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery])
@@ -235,7 +235,7 @@ function MetaDataOptimizerPage() {
     useEffect(() => {
         setPage(0)
         setSearchLoading(true)
-        handleGetNextProducts({nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
         setSearchLoading(false)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [onlyNotOptimizedProducts, onlyOptimizedProducts])
@@ -264,9 +264,20 @@ function MetaDataOptimizerPage() {
                                 alt='Product image'
                             />
                         </IndexTable.Cell>
-                        <IndexTable.Cell>{title || '—'}</IndexTable.Cell>
                         <IndexTable.Cell>
-                            {currentDescription || '—'}
+                            <Link
+                                dataPrimaryLink
+                                url={`/app/generate-product-description/${productId.replace('gid://shopify/Product/', '')}`}
+                            >
+                                {title || '—'}
+                            </Link>
+                        </IndexTable.Cell>
+                        <IndexTable.Cell>
+                            <div style={{ width: '250px' }}>
+                                <Text as='p' truncate>
+                                    {currentDescription || '—'}
+                                </Text>
+                            </div>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             {generatedDescription
@@ -279,7 +290,7 @@ function MetaDataOptimizerPage() {
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <InlineStack blockAlign='center' align='center' >
-                                <Link url={`/app/optimize-product-description/${productId.replace('gid://shopify/Product/', '')}`}>
+                                <Link url={`/app/generate-product-description/${productId.replace('gid://shopify/Product/', '')}`}>
                                     <div style={{ width: '20px', height: '20px' }}>
                                         <Icon
                                             source={TextBlockIcon}
@@ -299,7 +310,7 @@ function MetaDataOptimizerPage() {
     return (
         <Frame>
             <Page
-                title='Description Optimizer'
+                title='Description Generator'
                 backAction={{ content: 'Dashboard', url: '/app' }}
                 fullWidth
             >
@@ -344,7 +355,7 @@ function MetaDataOptimizerPage() {
                                 onNext: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage + 1
-                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
                                         return newPage
                                     })
                                 },
@@ -352,7 +363,7 @@ function MetaDataOptimizerPage() {
                                 onPrevious: () => {
                                     setPage(currentPage => {
                                         const newPage = currentPage - 1
-                                        handleGetNextProducts({nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts})
+                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
                                         return newPage
                                     })
                                 }
