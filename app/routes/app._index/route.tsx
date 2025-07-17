@@ -18,8 +18,9 @@ import StoreInformationComponent from "app/Components/storeInformation.component
 import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server";
 import CardAiSeoOptimizer from "app/Components/cardAiSeoOptimizer";
 import { getShopMetrics } from "app/models/getShoMetrics.server";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import prisma from "app/db.server";
+import SkeletonTablePage from "app/Components/skeletonTablePage";
 
 type Data = {
   countOfProducts: number;
@@ -189,7 +190,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const data: Data = useLoaderData()
-
+  const navigation = useNavigation()
+  const isLoading = navigation.state === 'loading'
 
   const { countOfProducts,
     countOfOptimizedProducts,
@@ -205,7 +207,9 @@ export default function Index() {
     aiCredits } = data
 
 
-  return (
+  return isLoading ? (
+    <SkeletonTablePage />
+  ) : (
     <Page>
 
       <Box paddingBlockEnd='200'>
@@ -251,13 +255,13 @@ export default function Index() {
                     </Text>
                     <BlockStack gap="200">
                       <Text as="p" variant="bodyLg" >
-                        Create high-conversion descriptions for your products
+                        Generate high-conversion descriptions for your products
                       </Text>
 
                       <div style={{ width: 225 }}>
                         <Link url='/app/optimize-product-description'>
                           <Button >
-                            Optimize description
+                            Generate description
                           </Button>
                         </Link>
                       </div>

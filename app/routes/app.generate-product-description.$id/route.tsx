@@ -7,8 +7,8 @@ import { GraphqlQueryError } from "@shopify/shopify-api";
 import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
-import { useLoaderData } from "@remix-run/react";
-import { useCallback, useEffect, useState } from 'react';
+import { useLoaderData, useNavigation, } from "@remix-run/react";
+import { useCallback, useEffect, useState, } from 'react';
 import { suggestKeywords } from 'app/utils/suggestKeywords.server';
 import { fetchGeneratedDescriptions } from 'app/utils/fetchGeneratedDescriptions.client';
 import KeywordInput from 'app/Components/keywordInput';
@@ -20,6 +20,7 @@ import AiFeature from 'app/Components/aiFeature';
 import Editor from 'app/Components/editor.client';
 import { ClientOnly } from "remix-utils/client-only"
 import CustomBadge from 'app/Components/customBadge';
+import SkeletonTablePage from 'app/Components/skeletonTablePage';
 
 type Data = {
   productData: {
@@ -65,7 +66,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if (!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || '' })
 
     if (keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -107,6 +108,8 @@ function OptimizeProductDescriptionPage() {
   const [isMissingBrand, setIsMissingBrand] = useState<boolean>(false)
   const [isMissingProductDetails, setIsMissingProductDetails] = useState<boolean>(false)
   const [credits, setCredits] = useState<number>(0)
+  const navigation = useNavigation()
+  const isLoading = navigation.state === 'loading'
   const [loadingFetchGeneratedDescriptions, setLoadingFetchGeneratedDescriptions] = useState<boolean>(false)
   const [loadingUpdateProductDescription, setLoadingUpdateProductDescription] = useState<boolean>(false)
   const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
@@ -301,7 +304,9 @@ function OptimizeProductDescriptionPage() {
   }, [description, productData.productId])
 
 
-  return (
+  return isLoading ? (
+    <SkeletonTablePage />
+  ) : (
     <Page
       title={`${productData.title}`}
       backAction={{ content: 'Description generator', url: '/app/description-generator' }}
@@ -317,7 +322,7 @@ function OptimizeProductDescriptionPage() {
               </Box>
             </Box>
 
-            <Form preventDefault implicitSubmit={false}  onSubmit={() => {}}>
+            <Form preventDefault implicitSubmit={false} onSubmit={() => { }}>
               <FormLayout>
                 <BlockStack gap='100'>
                   <Text as='span'>Product Image</Text>

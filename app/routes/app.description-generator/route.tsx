@@ -7,12 +7,13 @@ import type { IndexFiltersProps } from '@shopify/polaris';
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import { formatDate } from "app/utils/formateDate";
 import isEmpty from 'app/utils/isEmpty'
 import disambiguateLabel from 'app/utils/disambiguateLabel'
 import Footer from "app/Components/footer.component";
 import { useDebounce } from "app/hook/useDebounce";
+import SkeletonFeaturePage from "app/Components/skeletonFeaturesPage";
 
 type Data = {
     productsData: {
@@ -104,6 +105,8 @@ function MetaDataOptimizerPage() {
     const [page, setPage] = useState<number>(0)
     const [hasNextPage, setHasNextPage] = useState<boolean>(products.length === 15)
     const [loading, setLoading] = useState<boolean>(false)
+    const navigation = useNavigation()
+    const isLoading = navigation.state === 'loading'
     const [searchLoading, setSearchLoading] = useState<boolean>(false)
     const [onlyOptimizedProducts, setOnlyOptimizedProducts] = useState<boolean>(false)
     const [onlyNotOptimizedProducts, setOnlyNotOptimizedProducts] = useState<boolean>(false)
@@ -121,6 +124,8 @@ function MetaDataOptimizerPage() {
     );
     const [queryValue, setQueryValue] = useState('');
     const debouncedQuery = useDebounce(queryValue, 1000)
+
+    const breakPoints = useBreakpoints().smDown
 
     const handleOptimizeStatusChange = useCallback(
         (value: string[]) => {
@@ -307,7 +312,9 @@ function MetaDataOptimizerPage() {
 
     }, [products])
 
-    return (
+    return isLoading ? (
+        <SkeletonFeaturePage />
+    ) : (
         <Frame>
             <Page
                 title='Description Generator'
@@ -340,7 +347,7 @@ function MetaDataOptimizerPage() {
                             loading={searchLoading}
                         />
                         <IndexTable
-                            condensed={useBreakpoints().smDown}
+                            condensed={breakPoints}
                             itemCount={products.length}
                             headings={[
                                 { title: '' },

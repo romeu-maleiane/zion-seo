@@ -7,7 +7,7 @@ import { GraphqlQueryError } from "@shopify/shopify-api";
 import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";
 import prisma from "app/db.server";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import { useCallback, useEffect, useState } from 'react';
 import { suggestKeywords } from 'app/utils/suggestKeywords.server';
 import { fetchOptimizedMetaData } from 'app/utils/fetchOptimizedMetData.client';
@@ -19,6 +19,7 @@ import { postUpdateMetaData } from 'app/utils/postUpdateMetaData.client';
 import SaveBarComponent from 'app/Components/saveBar';
 import Footer from 'app/Components/footer.component';
 import AiFeature from 'app/Components/aiFeature';
+import SkeletonTablePage from 'app/Components/skeletonTablePage';
 
 
 type Data = {
@@ -69,7 +70,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     if (!productData) return Response.json({ message: 'Product not found' }, { status: 404 })
 
-    const keywordsData = await suggestKeywords({ productTitle: productData?.title || ''})
+    const keywordsData = await suggestKeywords({ productTitle: productData?.title || '' })
 
     if (keywordsData.status === 'error') throw new Error("Error fetching suggested keywords");
 
@@ -114,6 +115,8 @@ function OptimizeMetaDataPage() {
   const [suggestedKeyWords, setSuggestedKeyWords] = useState<Array<string>>([])
   const [isMissingKeywords, setIsMissingKeywords] = useState<boolean>(false)
   const [credits, setCredits] = useState<number>(0)
+  const navigation = useNavigation()
+  const isLoading = navigation.state === 'loading'
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
   const [loadingUpdateProductMetaData, setLoadingUpdateProductMetaData] = useState<boolean>(false)
   const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
@@ -183,7 +186,7 @@ function OptimizeMetaDataPage() {
 
       const stringOfKeywords = keyWords.join(`, `)
 
-      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaTitle: productData.currentMetaTitle, metaDescription: productData.currentMetaDescription,  })
+      const optimizedMetaData = await fetchOptimizedMetaData({ productTitle: productData.title, keywords: stringOfKeywords, metaTitle: productData.currentMetaTitle, metaDescription: productData.currentMetaDescription, })
 
       if (!optimizedMetaData) throw new Error("An error occured fetching optimized meta data");
 
@@ -236,9 +239,11 @@ function OptimizeMetaDataPage() {
     }
   }, [metaDescription, metaTitle, productData.productId])
 
-  return (
-    <Page 
-      title={`${productData.title}`} 
+  return isLoading ? (
+    <SkeletonTablePage />
+  ) : (
+    <Page
+      title={`${productData.title}`}
       backAction={{ content: 'Meta data optimizer', url: '/app/meta-data-optimizer' }}
     >
 
@@ -375,7 +380,7 @@ function OptimizeMetaDataPage() {
         </Layout.Section>
         <Layout.Section variant="oneThird">
 
-          <AiFeature 
+          <AiFeature
             title='AI Meta title/description optimizer'
             subTitle='Optimize your meta titles and meta descriptions with the power of AI'
             action={handleFetchOptimizedMetaData}
@@ -386,7 +391,7 @@ function OptimizeMetaDataPage() {
         </Layout.Section>
       </Layout>
 
-      <Footer/>
+      <Footer />
     </Page>
   )
 }
