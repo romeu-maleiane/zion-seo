@@ -10,6 +10,15 @@ import {
   Link,
   InlineGrid,
 } from "@shopify/polaris";
+import {
+  SHOP_INFO_QUERY,
+  PRODUCTS_QUERY_FREE,
+  PRODUCTS_QUERY_STARTER,
+  PRODUCTS_QUERY_PRO,
+  COLLECTIONS_QUERY,
+  BLOGS_QUERY,
+  PAGES_QUERY,
+} from "app/utils/graphqlQuerys";
 import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
 import { createOrUpdateShop } from "app/models/createOrUpdateShop.server"
@@ -21,6 +30,9 @@ import { getShopMetrics } from "app/models/getShoMetrics.server";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import prisma from "app/db.server";
 import SkeletonTablePage from "app/Components/skeletonTablePage";
+import { createOrUpdateCollections } from "app/models/createOrUpdateCollection.server";
+import { createOrUpdateBlogs } from "app/models/createOrUpdateBlog.server";
+import { createOrUpdatePages } from "app/models/createOrUpdate.server";
 
 type Data = {
   countOfProducts: number;
@@ -41,105 +53,50 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
   try {
-    const shop = await admin.graphql(
-      `#graphql
-      query shopInfo {
-        shop {
-          id
-          name
-          primaryDomain {
-            host
-          }
-          email
-        }
-      }`,
-    );
+    const shop = await admin.graphql(SHOP_INFO_QUERY);
 
     const shopData = await shop.json()
+    const shopId = shopData.data.shop.id
+    const shopName = shopData.data.shop.name
+    const shopEmail = shopData.data.shop.email
+    const shopDomain = shopData.data.shop.primaryDomain.host
 
     const { createdOrUpdatedStore } = await createOrUpdateShop({
-      id: shopData.data.shop.id,
-      name: shopData.data.shop.name,
-      email: shopData.data.shop.email,
-      domain: shopData.data.shop.primaryDomain.host
+      id: shopId,
+      name: shopName,
+      email: shopEmail,
+      domain: shopDomain
     }).then(response => response.json())
 
     let products;
 
     if (createdOrUpdatedStore.activePlan === 'free') {
-      products = await admin.graphql(
-        `#graphql
-        query GetFirst250Products {
-          products(first: 25 ) {
-            edges {
-              cursor
-              node {
-                id                
-                title             
-                description
-                createdAt
-                variants(first: 1) {
-                  nodes {
-                    price
-                  }
-                }       
-                seo {
-                  title           
-                  description     
-                }
-                featuredMedia {
-                  mediaContentType
-                  ... on MediaImage {
-                    image {
-                      url
-                    }
-                  }            
-                }
-              }
-            }
-          }
-        }`,
-      )
-
+      products = await admin.graphql(PRODUCTS_QUERY_FREE);
+    } else if (createdOrUpdatedStore.activePlan === 'starter') {
+      products = await admin.graphql(PRODUCTS_QUERY_STARTER);
     } else {
-      products = await admin.graphql(
-        `#graphql
-        query GetFirst250Products {
-          products( first: 250 ) {
-            edges {
-              cursor
-              node {
-                id                
-                title             
-                description
-                createdAt
-                variants(first: 1) {
-                  nodes {
-                    price
-                  }
-                }       
-                seo {
-                  title           
-                  description     
-                }
-                featuredMedia {
-                  mediaContentType
-                  ... on MediaImage {
-                    image {
-                      url
-                    }
-                  }            
-                }
-              }
-            }
-          }
-        }`,
-      )
+      products = await admin.graphql(PRODUCTS_QUERY_PRO);
     }
 
-    const productsData = await products.json()
+    const [collections, blogs, pages] = await Promise.all([
+      admin.graphql(COLLECTIONS_QUERY),
+      admin.graphql(BLOGS_QUERY),
+      admin.graphql(PAGES_QUERY),
+    ]);
 
-    await createOrUpdateProducts(productsData.data.products.edges, shopData.data.shop.id)
+    const [ productsData, collectionsData, blogsData, pagesData] = await Promise.all([
+      products.json(),
+      collections.json(),
+      blogs.json(),
+      pages.json(),
+    ]);
+
+    await Promise.all([
+      createOrUpdateProducts(productsData.data.products.edges, shopId),
+      createOrUpdateCollections(collectionsData.data.collections.nodes, shopDomain, shopId),
+      createOrUpdateBlogs(blogsData.data.blogs.nodes, shopDomain, shopId),
+      createOrUpdatePages(pagesData.data.pages.nodes, shopDomain, shopId),
+    ]);
 
     const {
       countOfProducts,
@@ -179,7 +136,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
-
+      console.error('Dashboard Graphql Query Error: ', error.body?.errors)
       return Response.json({ errors: error.body?.errors }, { status: 500 });
     }
     console.error('Dashboard Error: ', error)

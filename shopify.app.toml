@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://olympics-devon-evaluated-heating.trycloudflare.com"
+application_url = "https://install-containing-computation-usd.trycloudflare.com"
 embedded = true
 
 [build]
@@ -23,10 +23,10 @@ api_version = "2025-04"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "write_products,read_products,read_content"
 
 [auth]
-redirect_urls = ["https://olympics-devon-evaluated-heating.trycloudflare.com/auth/callback", "https://olympics-devon-evaluated-heating.trycloudflare.com/auth/shopify/callback", "https://olympics-devon-evaluated-heating.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://install-containing-computation-usd.trycloudflare.com/auth/callback", "https://install-containing-computation-usd.trycloudflare.com/auth/shopify/callback", "https://install-containing-computation-usd.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

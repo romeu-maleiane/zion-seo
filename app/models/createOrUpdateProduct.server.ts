@@ -5,6 +5,7 @@ interface CreateOrUpdateProductsType {
         id: string
         title: string
         description: string
+        onlineStoreUrl: string | null
         createdAt: string
         variants: {
             nodes: Array<{
@@ -46,6 +47,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
                 update: {
                     productImage: productImage,
                     productPrice: productPrice,
+                    productUrl: product.node?.onlineStoreUrl || '',
                     storeId: shopId,
                     title: product.node.title,
                     currentDescription: product.node.description,
@@ -57,6 +59,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
                     productId: product.node.id,
                     productImage: productImage,
                     productPrice: productPrice,
+                    productUrl: product.node.onlineStoreUrl || '',
                     title: product.node.title,
                     currentDescription: product.node.description,
                     currentMetaTitle: metaTitle,
@@ -71,10 +74,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
             return ProductCreatedOrUpdated
         })
 
-        return Response.json({ message: 'success' }, { status: 200 })
-
     } catch (error) {
         console.error('CreateOrUpdateProducts Error: ', error)
-        return Response.json({ message: 'An error occurred' }, { status: 500 })
     }
 }

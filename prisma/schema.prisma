@@ -39,6 +39,9 @@ model Store {
   storeDomain String    @unique
   email       String    @unique
   products    Product[]
+  collections Collection[]
+  pages Page[]
+  blogs Blog[]
   activePlan  String    @default("free")
   aiCredits   Int       @default(20)
   createdAt   DateTime  @default(now())
@@ -50,6 +53,7 @@ model Product {
   productId   String @unique
   productImage String?
   productPrice  Float?
+  productUrl String?
   storeId     String
   store       Store    @relation(fields: [storeId], references: [storeId])
   title       String
@@ -59,9 +63,43 @@ model Product {
   generatedDescription String?
   generatedMetaTitle String?
   generatedMetaDescription String?
+  showForLlms Boolean @default(true)
   isOptimized Boolean @default(false)
   createdAt   DateTime @default(now())
   descriptionOptimizedAt DateTime?
   metaDataOptimizedAt DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+model Collection {
+  id          String   @id  @default(uuid())
+  collectionId   String @unique
+  collectionImage String?
+  collectionUrl String?
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [storeId])
+  title       String
+  description String
+  showForLlms Boolean @default(true)
+  updatedAt   DateTime @updatedAt
+}
+
+model Page {
+  id          String   @id  @default(uuid())
+  pageId   String @unique
+  pageUrl String?
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [storeId])
+  title       String
+  updatedAt   DateTime @updatedAt
+}
+
+model Blog {
+  id          String   @id  @default(uuid())
+  blogId   String @unique
+  blogUrl String?
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [storeId])
+  title       String
   updatedAt   DateTime @updatedAt
 }
