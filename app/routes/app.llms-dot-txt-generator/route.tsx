@@ -52,7 +52,7 @@ function LlmsDotTxtPage() {
 
 
 
-    const handleOnChangeDescription = useCallback((value: string) => setDescription(value),[])
+    const handleOnChangeDescription = useCallback((value: string) => setDescription(value), [])
 
     const handleOnChangeIncludeProducts = useCallback(() => setIncludeProductsStatus(prev => !prev), [])
     const handleOnChangeIncludeCollections = useCallback(() => setIncludeCollectionsStatus(prev => !prev), [])
@@ -87,19 +87,16 @@ function LlmsDotTxtPage() {
             <Layout>
                 <Layout.Section>
                     <Card>
-                        <BlockStack>
+                        <BlockStack gap='100'>
                             <Text as='h2' variant="headingLg" fontWeight='medium'>
                                 Description (Optional)
                             </Text>
-                            <Text as='p'>
-                                Briefly describe your site or content focus.
-                            </Text>
+                            <Divider />
                         </BlockStack>
 
-                        <Box paddingBlockStart='200'>
+                        <Box paddingBlockStart='300'>
                             <TextField
-                                label="Description"
-                                labelHidden
+                                label="Briefly describe your site or content focus."
                                 value={description}
                                 onChange={handleOnChangeDescription}
                                 placeholder='Optional description'
@@ -112,16 +109,19 @@ function LlmsDotTxtPage() {
 
                 <Layout.Section>
                     <Card>
-                        <BlockStack>
+                        <BlockStack gap='100'>
                             <Text as='h2' variant="headingLg" fontWeight='medium'>
                                 Content Selection
                             </Text>
-                            <Text as='p'>
-                                Choose which products, collections, blog posts, and pages to include in the file.
-                            </Text>
+                            <Divider />
                         </BlockStack>
 
-                        <Box paddingBlock='200'>
+                        <Box paddingBlock='300'>
+                            <Box>
+                                <Text as='p'>
+                                    Choose which products, collections, blog posts, and pages to include in the file.
+                                </Text>
+                            </Box>
                             <BlockStack>
                                 <Checkbox
                                     label={'Include Products'}
@@ -212,16 +212,19 @@ function LlmsDotTxtPage() {
 
                 <Layout.Section>
                     <Card>
-                        <BlockStack>
+                        <BlockStack gap='100'>
                             <Text as='h2' variant="headingLg" fontWeight='medium'>
                                 Crawler Access
                             </Text>
-                            <Text as='p'>
-                                Select which LLM crawlers are allowed. All are enabled by default.
-                            </Text>
+                            <Divider />
                         </BlockStack>
 
-                        <Box paddingBlockStart='200'>
+                        <Box paddingBlockStart='300'>
+                            <Box>
+                                <Text as='p'>
+                                    Select which LLM crawlers are allowed. All are enabled by default.
+                                </Text>
+                            </Box>
                             <BlockStack gap='200'>
                                 {crawlers.map(crawler => (
                                     <Checkbox key={crawler.id}
