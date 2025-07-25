@@ -30,6 +30,9 @@ export default function App() {
         <Link to="/app/description-generator" rel="Products">
           Description Generator
         </Link>
+        <Link to="/app/llms-dot-txt-generator" rel="Products">
+          LLMs.txt Generator
+        </Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
