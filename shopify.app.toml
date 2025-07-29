@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://ins-twiki-horizontal-abc.trycloudflare.com"
+application_url = "https://pharmacies-directions-photographers-announce.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-04"
 scopes = "write_products,read_products,read_content"
 
 [auth]
-redirect_urls = ["https://ins-twiki-horizontal-abc.trycloudflare.com/auth/callback", "https://ins-twiki-horizontal-abc.trycloudflare.com/auth/shopify/callback", "https://ins-twiki-horizontal-abc.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://pharmacies-directions-photographers-announce.trycloudflare.com/auth/callback", "https://pharmacies-directions-photographers-announce.trycloudflare.com/auth/shopify/callback", "https://pharmacies-directions-photographers-announce.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false
