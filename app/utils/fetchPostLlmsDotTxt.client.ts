@@ -1,5 +1,6 @@
 
 interface FetchPostLlmsDotTxtProps {
+    storeId: string
     description: string
     includeProducts: boolean
     includeCollections: boolean
@@ -19,6 +20,7 @@ interface FetchPostLlmsDotTxtProps {
 }
 
 export const fetchPostLlmsDotTxt = async ({ 
+    storeId,
     description,
     includeProducts,
     includeCollections,

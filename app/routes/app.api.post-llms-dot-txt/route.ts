@@ -12,6 +12,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     try {
         
+        const storeId: string = formData.get('storeId') as string || ''
         const description: string = formData.get('description') as string || ''
         const includeProducts: boolean = formData.get('includeProducts') === 'true';
         const includeCollections: boolean = formData.get('includeCollections') === 'true'
@@ -26,6 +27,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const crawlers: Array<CrawlersType> = JSON.parse(formData.get('crawlers') as string)
 
         const response = await postLlmsDotTxt({
+            storeId,
             description,
             includeProducts,
             includeCollections,

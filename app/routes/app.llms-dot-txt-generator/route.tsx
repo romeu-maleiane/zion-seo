@@ -135,7 +135,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         return Response.json({ productsData, collectionsData, LLMDotTxtConfigData, shopId }, { status: 200 })
     } catch (error) {
         console.error('LLMs.txt Loader Error : ', error)
-        return Response.json({ message: 'Something went roang loading data' }, { status: 500 })
+        return Response.json({ message: 'Something went wroang loading data' }, { status: 500 })
     }
 }
 
