@@ -149,14 +149,14 @@ export const postLlmsDotTxt = async ({
         }
 
 
-        let chatgpt: boolean;
-        let gemini: boolean;
-        let grok: boolean;
-        let deepseek: boolean;
-        let claude: boolean;
-        let perplexity: boolean;
+        let chatgpt: boolean = false
+        let gemini: boolean = false
+        let grok: boolean = false
+        let deepseek: boolean = false
+        let claude: boolean = false
+        let perplexity: boolean = false
 
-        crawlers.map(crawler => {
+        crawlers.forEach(crawler => {
             if (crawler.id === 'chatgpt') chatgpt = crawler.status
             else if (crawler.id === 'gemini') gemini = crawler.status
             else if (crawler.id === 'grok') grok = crawler.status
@@ -168,26 +168,24 @@ export const postLlmsDotTxt = async ({
         })
 
         let llmDotTxtConfig;
-        setTimeout(async () => {
-            llmDotTxtConfig = await prisma.lLMDotTxtConfig.updateMany({
-                where: {
-                    storeId: storeId
-                },
-                data: {
-                    llmDotTxtDescription: description,
-                    includeProducts: includeProducts,
-                    includeCollections: includeCollections,
-                    includeBlogs: includeBlogs,
-                    includePages: includePages,
-                    selectChatGPT: chatgpt,
-                    selectGemini: gemini,
-                    selectGrok: grok,
-                    selectDeepSeek: deepseek,
-                    selectClaude: claude,
-                    selectPerplexity: perplexity,
-                }
-            })
-        }, 500);
+        llmDotTxtConfig = await prisma.lLMDotTxtConfig.updateMany({
+            where: {
+                storeId: storeId
+            },
+            data: {
+                llmDotTxtDescription: description,
+                includeProducts: includeProducts,
+                includeCollections: includeCollections,
+                includeBlogs: includeBlogs,
+                includePages: includePages,
+                selectChatGPT: chatgpt,
+                selectGemini: gemini,
+                selectGrok: grok,
+                selectDeepSeek: deepseek,
+                selectClaude: claude,
+                selectPerplexity: perplexity,
+            }
+        })
 
         if (!productData || !collectionData || !llmDotTxtConfig)
             throw new Error("Something went wrong updating llms.txt data");
