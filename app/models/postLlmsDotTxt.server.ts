@@ -43,6 +43,7 @@ export const postLlmsDotTxt = async ({
         if (productRadioResult === 'all') {
             productData = await prisma.product.updateMany({
                 where: {
+                    storeId: storeId,
                     showForLlms: false
                 },
                 data: {
@@ -54,6 +55,7 @@ export const postLlmsDotTxt = async ({
             await Promise.all([
                 prisma.product.updateMany({
                     where: {
+                        storeId: storeId,
                         productId: { in: savedSelectedProducts }
                     },
                     data: {
@@ -62,6 +64,7 @@ export const postLlmsDotTxt = async ({
                 }),
                 prisma.product.updateMany({
                     where: {
+                        storeId: storeId,
                         productId: { notIn: savedSelectedProducts }
                     },
                     data: {
@@ -75,6 +78,7 @@ export const postLlmsDotTxt = async ({
             await Promise.all([
                 prisma.product.updateMany({
                     where: {
+                        storeId: storeId,
                         productId: { in: savedExceptSelectedProducts }
                     },
                     data: {
@@ -83,6 +87,7 @@ export const postLlmsDotTxt = async ({
                 }),
                 prisma.product.updateMany({
                     where: {
+                        storeId: storeId,
                         productId: { notIn: savedExceptSelectedProducts }
                     },
                     data: {
@@ -98,6 +103,7 @@ export const postLlmsDotTxt = async ({
         if (collectionRadioResult === 'all') {
             collectionData = await prisma.collection.updateMany({
                 where: {
+                    storeId: storeId,
                     showForLlms: false
                 },
                 data: {
@@ -109,6 +115,7 @@ export const postLlmsDotTxt = async ({
             await Promise.all([
                 prisma.collection.updateMany({
                     where: {
+                        storeId: storeId,
                         collectionId: { in: savedSelectedCollections }
                     },
                     data: {
@@ -117,6 +124,7 @@ export const postLlmsDotTxt = async ({
                 }),
                 prisma.collection.updateMany({
                     where: {
+                        storeId: storeId,
                         collectionId: { notIn: savedSelectedCollections }
                     },
                     data: {
@@ -130,6 +138,7 @@ export const postLlmsDotTxt = async ({
             await Promise.all([
                 prisma.collection.updateMany({
                     where: {
+                        storeId: storeId,
                         collectionId: { in: savedExceptSelectedCollections }
                     },
                     data: {
@@ -138,6 +147,7 @@ export const postLlmsDotTxt = async ({
                 }),
                 prisma.collection.updateMany({
                     where: {
+                        storeId: storeId,
                         collectionId: { notIn: savedExceptSelectedCollections }
                     },
                     data: {
@@ -156,6 +166,7 @@ export const postLlmsDotTxt = async ({
         let claude: boolean = false
         let perplexity: boolean = false
 
+        // Add crawlers status
         crawlers.forEach(crawler => {
             if (crawler.id === 'chatgpt') chatgpt = crawler.status
             else if (crawler.id === 'gemini') gemini = crawler.status
@@ -167,17 +178,28 @@ export const postLlmsDotTxt = async ({
             return crawler
         })
 
-        let llmDotTxtConfig;
-        llmDotTxtConfig = await prisma.lLMDotTxtConfig.updateMany({
-            where: {
-                storeId: storeId
-            },
-            data: {
+        // verifing the value for products and collections fields in LLMs.txt config table
+        const dataToUpdadeLlmsConfing = () => {
+            const selectAllProductsValue = productRadioResult === 'all'
+            const selectedProductsValue = productRadioResult === 'selected'
+            const exceptSelectedProductsValue = productRadioResult === 'except'
+            
+            const selectAllCollectionsValue = collectionRadioResult === 'all'
+            const selectedCollectionsValue = collectionRadioResult === 'selected'
+            const exceptSelectedCollectionsValue = collectionRadioResult === 'except'
+            
+            return {
                 llmDotTxtDescription: description,
                 includeProducts: includeProducts,
                 includeCollections: includeCollections,
                 includeBlogs: includeBlogs,
                 includePages: includePages,
+                selectAllProducts: selectAllProductsValue,
+                selectedProducts: selectedProductsValue,
+                exceptSelectedProducts: exceptSelectedProductsValue,
+                selectAllCollections: selectAllCollectionsValue,
+                selectedCollections: selectedCollectionsValue,
+                exceptSelectedCollections: exceptSelectedCollectionsValue,
                 selectChatGPT: chatgpt,
                 selectGemini: gemini,
                 selectGrok: grok,
@@ -185,6 +207,15 @@ export const postLlmsDotTxt = async ({
                 selectClaude: claude,
                 selectPerplexity: perplexity,
             }
+        }
+
+        // Handle llmDotTxtConfig update
+        let llmDotTxtConfig;
+        llmDotTxtConfig = await prisma.lLMDotTxtConfig.updateMany({
+            where: {
+                storeId: storeId
+            },
+            data: dataToUpdadeLlmsConfing()
         })
 
         if (!productData || !collectionData || !llmDotTxtConfig)

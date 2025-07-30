@@ -42,10 +42,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             crawlers
         })
 
+        if(response.status === 500) 
+            throw new Error('An error occured posting LLMs.txt data')
 
+        return Response.json({ message: 'LLMs.txt was post ssuccesfuly' }, { status: 200 })
     } catch (error) {
         console.error('Api Post LLMS.txt Error:', error);
-        return Response.json('Internal Server Error', { status: 500 });
+        return Response.json({message: 'Internal Server Error'}, { status: 500 });
 
     }
 }

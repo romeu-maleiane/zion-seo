@@ -10,6 +10,7 @@ import ExceptProductsModal from 'app/Components/exceptSelectedProductsModal'
 import SkeletonTablePage from 'app/Components/skeletonTablePage'
 import ExceptSelectedCollectionsModal from 'app/Components/exceptSelectedCollections'
 import SelectedCollectionsModal from 'app/Components/selectedCollectionsModal'
+import { fetchPostLlmsDotTxt } from 'app/utils/fetchPostLlmsDotTxt.client'
 
 type LoaderLlmsDotTxtData = {
     productsData: {
@@ -31,11 +32,11 @@ type LoaderLlmsDotTxtData = {
         includeBlogs: boolean
         includePages: boolean
         selectAllProducts: boolean
-        selectProducts: boolean
-        removeProducts: boolean
+        selectedProducts: boolean
+        exceptSelectedProducts: boolean
         selectAllCollections: boolean
-        selectCollections: boolean
-        removeCollections: boolean
+        selectedCollections: boolean
+        exceptSelectedCollections: boolean
         selectChatGPT: boolean
         selectGemini: boolean
         selectGrok: boolean
@@ -107,11 +108,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                         includeBlogs: true,
                         includePages: true,
                         selectAllProducts: true,
-                        selectProducts: true,
-                        removeProducts: true,
+                        selectedProducts: true,
+                        exceptSelectedProducts: true,
                         selectAllCollections: true,
-                        selectCollections: true,
-                        removeCollections: true,
+                        selectedCollections: true,
+                        exceptSelectedCollections: true,
                         selectChatGPT: true,
                         selectGemini: true,
                         selectGrok: true,
@@ -144,6 +145,7 @@ function LlmsDotTxtPage() {
     const data: LoaderLlmsDotTxtData = useLoaderData()
     const navigation = useNavigation()
     const isLoading = navigation.state === 'loading'
+    const [isPostingLlmsDotTxt, setIsPostingLlmsDotTxt] = useState<boolean>(false)
     const [description, setDescription] = useState<string>('')
     const [includeProductsStatus, setIncludeProductsStatus] = useState<boolean>(true)
     const [includeCollectionsStatus, setIncludeCollectionsStatus] = useState<boolean>(true)
@@ -204,12 +206,12 @@ function LlmsDotTxtPage() {
         setIncludePagesStatus(data.LLMDotTxtConfigData.includePages)
         setProductsRadio(() => {
             if (data.LLMDotTxtConfigData.selectAllProducts) return 'all'
-            else if (data.LLMDotTxtConfigData.selectProducts) return 'selected'
+            else if (data.LLMDotTxtConfigData.selectedProducts) return 'selected'
             else return 'except'
         })
         setCollectionsRadio(() => {
             if (data.LLMDotTxtConfigData.selectAllCollections) return 'all'
-            else if (data.LLMDotTxtConfigData.selectCollections) return 'selected'
+            else if (data.LLMDotTxtConfigData.selectedCollections) return 'selected'
             else return 'except'
         })
         setCrawlers([
@@ -268,6 +270,48 @@ function LlmsDotTxtPage() {
         ))
     }, [])
 
+    const handleSaveLLMsDotTxtData = useCallback(async () => {
+        try {
+            if(productsRadio === 'selected' && savedSelectedProducts.length === 0 
+                || productsRadio === 'except' && savedExceptSelectedProducts.length === 0)
+                return shopify.toast.show('Please select products', { isError: true, duration: 5000 })
+
+            if(collectionsRadio === 'selected' && savedSelectedCollections.length === 0 
+                || collectionsRadio === 'except' && savedExceptSelectedCollections.length === 0)
+                return shopify.toast.show('Please select collections', { isError: true, duration: 5000 })
+
+            setIsPostingLlmsDotTxt(true)
+
+            const response = await fetchPostLlmsDotTxt({
+                storeId: data.shopId,
+                description,
+                includeProducts: includeProductsStatus,
+                includeCollections: includeCollectionsStatus,
+                productRadioResult: productsRadio,
+                collectionRadioResult: collectionsRadio,
+                savedSelectedProducts,
+                savedSelectedCollections,
+                savedExceptSelectedProducts,
+                savedExceptSelectedCollections,
+                includeBlogs: includeBlogsStatus,
+                includePages: includePagesStatus,
+                crawlers
+            })
+            
+            if(response.status === 'Error') 
+                throw new Error('An error occured')
+
+            setIsPostingLlmsDotTxt(false)
+            shopify.toast.show('LLM.txt updated')
+            return
+        } catch (error) {
+            setIsPostingLlmsDotTxt(false)
+            console.error('Handle Save LLMsDotTxt Data Error: ',error)
+            shopify.toast.show('Server Error', { duration: 5000, isError: true })
+            return
+        }
+    },[collectionsRadio, crawlers, data.shopId, description, includeBlogsStatus, includeCollectionsStatus, includePagesStatus, includeProductsStatus, productsRadio, savedExceptSelectedCollections, savedExceptSelectedProducts, savedSelectedCollections, savedSelectedProducts])
+
     return isLoading ? (
         <SkeletonTablePage />
     ) : (
@@ -276,7 +320,7 @@ function LlmsDotTxtPage() {
             subtitle='Generate Your LLMs.txt File in Seconds — Stay Visible to AI Crawlers'
             backAction={{ content: 'Dashboard', url: '/app' }}
             secondaryActions={<Button>View LLMs.txt</Button>}
-            primaryAction={<Button variant="primary">save</Button>}
+            primaryAction={<Button onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
         >
             <Layout>
                 <Layout.Section>

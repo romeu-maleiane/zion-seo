@@ -36,6 +36,7 @@ export const fetchPostLlmsDotTxt = async ({
 
     const formData = new FormData()
 
+    formData.append('storeId', storeId)
     formData.append('description', description || "")
     formData.append('includeProducts', String(includeProducts))
     formData.append('includeCollections', String(includeCollections))
@@ -50,7 +51,7 @@ export const fetchPostLlmsDotTxt = async ({
     formData.append('crawlers', JSON.stringify(crawlers))
 
     try {
-        const response = await fetch('/api/post-llms-txt', {
+        const response = await fetch('/app/api/post-llms-dot-txt', {
             method: 'POST',
             body: formData
         });
@@ -59,9 +60,10 @@ export const fetchPostLlmsDotTxt = async ({
             throw new Error('Failed to post llms.txt data');
         }
     
-        return response.json();
+        return { status: 'Success' };
     } catch (error) {
         console.error('Fetch Post LLMs.txt Error: ', error)
+        return { status: 'Error' }
     }
 
 }
