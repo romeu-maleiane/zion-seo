@@ -17,7 +17,7 @@ export const createOrUpdateShop = async ({id, name, domain, email, }: CreateOrUp
       email: email,
       storeDomain: domain,
       activePlan: 'free',
-      aiCredits: 20
+      aiCredits: 50
     },
     update: {
       storeName: name,

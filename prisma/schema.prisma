@@ -43,6 +43,7 @@ model Store {
   pages           Page[]
   blogs           Blog[]
   llmDotTxtConfig LLMDotTxtConfig[]
+  urlRedirectLlmsId String?
   activePlan      String            @default("free")
   aiCredits       Int               @default(20)
   createdAt       DateTime          @default(now())

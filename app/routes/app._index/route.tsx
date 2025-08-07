@@ -18,7 +18,7 @@ import {
   COLLECTIONS_QUERY,
   BLOGS_QUERY,
   PAGES_QUERY,
-} from "app/utils/graphqlQuerys";
+} from "app/utils/graphqlQuerysAndMutations";
 import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
 import { createOrUpdateShop } from "app/models/createOrUpdateShop.server"
@@ -84,7 +84,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       admin.graphql(PAGES_QUERY),
     ]);
 
-    const [ productsData, collectionsData, blogsData, pagesData] = await Promise.all([
+    const [productsData, collectionsData, blogsData, pagesData] = await Promise.all([
       products.json(),
       collections.json(),
       blogs.json(),
@@ -136,11 +136,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
-      console.error('Dashboard Graphql Query Error: ', error.body?.errors)
-      return Response.json({ errors: error.body?.errors }, { status: 500 });
+      console.error('Dashboard Graphql Error: ', error.body?.errors)
+      return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
     }
-    console.error('Dashboard Error: ', error)
-    return Response.json({ message: "An error occurred" }, { status: 500 });
+    console.error('Dashboard Loader Error: ', error)
+    return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
   }
 }
 

@@ -88,12 +88,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         return Response.json({ productsData, storeId: shopData.data.shop.id, activePlan: storeBalance?.activePlan, aiCredits: storeBalance?.aiCredits }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
-
-            console.error('Meta Data Optimizer Error: ', error)
-            return Response.json({ errors: error.body?.errors }, { status: 500 });
+            console.error('Meta Data Optimizer Graphql Error: ', error.body?.errors)
+            return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
         }
-        console.error('Meta Data Optimizer Error: ', error)
-        return Response.json({ message: "An error occurred" }, { status: 500 });
+        console.error('Meta Data Optimizer Loader Error: ', error)
+        return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
     }
 }
 

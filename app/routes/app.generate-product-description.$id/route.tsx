@@ -86,12 +86,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     }, { status: 200 })
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
-
-      console.error('Descripton Generator Error: ', error)
-      return Response.json({ message: "An error occurred" }, { status: 500 });
+      console.error('Descripton Generator Graphql Error: ', error.body?.errors)
+      return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
     }
-    console.error('Descripton Generator Error: ', error)
-    return Response.json({ message: "An error occurred" }, { status: 500 });
+    console.error('Descripton Generator Loader Error: ', error)
+    return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
   }
 }
 

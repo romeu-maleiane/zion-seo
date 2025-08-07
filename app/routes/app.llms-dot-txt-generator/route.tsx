@@ -11,6 +11,8 @@ import SkeletonTablePage from 'app/Components/skeletonTablePage'
 import ExceptSelectedCollectionsModal from 'app/Components/exceptSelectedCollections'
 import SelectedCollectionsModal from 'app/Components/selectedCollectionsModal'
 import { fetchPostLlmsDotTxt } from 'app/utils/fetchPostLlmsDotTxt.client'
+import { DELETE_URL_REDIRECT_MUTATION, GENERATE_URL_REDIRECT_MUTATION, GET_URL_REDIRECT_QUERY, } from 'app/utils/graphqlQuerysAndMutations'
+import { GraphqlQueryError } from "@shopify/shopify-api";
 
 type LoaderLlmsDotTxtData = {
     productsData: {
@@ -45,6 +47,7 @@ type LoaderLlmsDotTxtData = {
         selectPerplexity: boolean
     }
     shopId: string
+    shopDomain: string
 }
 
 type ProductType = {
@@ -70,6 +73,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 query shopInfo {
                     shop {
                         id
+                        primaryDomain {
+                            host
+                        }
                     }
                 }`,
         );
@@ -77,6 +83,48 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         const shopData = await shop.json()
 
         const shopId: string = shopData.data.shop.id
+        const shopDomain: string = shopData.data.shop.primaryDomain.host
+
+        const getOrCreateLlmsConfig = async (shopId: string) => {
+            let config = await prisma.lLMDotTxtConfig.findFirst({
+                where: { storeId: shopId },
+                select: {
+                    llmDotTxtDescription: true,
+                    includeProducts: true,
+                    includeCollections: true,
+                    includeBlogs: true,
+                    includePages: true,
+                    selectAllProducts: true,
+                    selectedProducts: true,
+                    exceptSelectedProducts: true,
+                    selectAllCollections: true,
+                    selectedCollections: true,
+                    exceptSelectedCollections: true,
+                    selectChatGPT: true,
+                    selectGemini: true,
+                    selectGrok: true,
+                    selectDeepSeek: true,
+                    selectClaude: true,
+                    selectPerplexity: true
+                }
+            }
+            );
+            if (!config) {
+                const response = await admin.graphql(GENERATE_URL_REDIRECT_MUTATION, {
+                    variables: {
+                        urlRedirect: {
+                            path: "/llms.txt",
+                            target: "/a/llms-txt"
+                        }
+                    }
+                });
+                const urlRedirectData = await response.json()
+                const urlRedirectId = urlRedirectData.data?.urlRedirectCreate?.urlRedirect.id || '';
+                await prisma.store.updateMany({ where: { storeId: shopId }, data: { urlRedirectLlmsId: urlRedirectId } });
+                config = await prisma.lLMDotTxtConfig.create({ data: { storeId: shopId } });
+            }
+            return config;
+        };
 
         const [productsData, collectionsData, LLMDotTxtConfigData] = await Promise.all([
             prisma.product.findMany({
@@ -98,43 +146,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                     showForLlms: true,
                 }
             }),
-            async function () {
-                const data = await prisma.lLMDotTxtConfig.findFirst({
-                    where: { storeId: shopId },
-                    select: {
-                        llmDotTxtDescription: true,
-                        includeProducts: true,
-                        includeCollections: true,
-                        includeBlogs: true,
-                        includePages: true,
-                        selectAllProducts: true,
-                        selectedProducts: true,
-                        exceptSelectedProducts: true,
-                        selectAllCollections: true,
-                        selectedCollections: true,
-                        exceptSelectedCollections: true,
-                        selectChatGPT: true,
-                        selectGemini: true,
-                        selectGrok: true,
-                        selectDeepSeek: true,
-                        selectClaude: true,
-                        selectPerplexity: true
-                    }
-                })
-
-                if (!data) {
-                    return await prisma.lLMDotTxtConfig.create({
-                        data: { storeId: shopId }
-                    })
-                }
-
-                return data
-            }()
+            getOrCreateLlmsConfig(shopId)
         ])
 
 
-        return Response.json({ productsData, collectionsData, LLMDotTxtConfigData, shopId }, { status: 200 })
+        return Response.json({ productsData, collectionsData, LLMDotTxtConfigData, shopId, shopDomain }, { status: 200 })
     } catch (error) {
+        if (error instanceof GraphqlQueryError) {
+            console.error('LLMs.txt Graphql Error: ', error.body?.errors)
+            return Response.json({ message: "Something went wroang loading data" }, { status: 500 });
+        }
         console.error('LLMs.txt Loader Error : ', error)
         return Response.json({ message: 'Something went wroang loading data' }, { status: 500 })
     }
@@ -197,7 +218,7 @@ function LlmsDotTxtPage() {
     ])
 
     useEffect(() => {
-        setDescription(data.LLMDotTxtConfigData.llmDotTxtDescription)
+        setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription || '')
         setAllProducts(data.productsData)
         setCollections(data.collectionsData)
         setIncludeProductsStatus(data.LLMDotTxtConfigData.includeProducts)
@@ -272,11 +293,11 @@ function LlmsDotTxtPage() {
 
     const handleSaveLLMsDotTxtData = useCallback(async () => {
         try {
-            if(productsRadio === 'selected' && savedSelectedProducts.length === 0 
+            if (productsRadio === 'selected' && savedSelectedProducts.length === 0
                 || productsRadio === 'except' && savedExceptSelectedProducts.length === 0)
                 return shopify.toast.show('Please select products', { isError: true, duration: 5000 })
 
-            if(collectionsRadio === 'selected' && savedSelectedCollections.length === 0 
+            if (collectionsRadio === 'selected' && savedSelectedCollections.length === 0
                 || collectionsRadio === 'except' && savedExceptSelectedCollections.length === 0)
                 return shopify.toast.show('Please select collections', { isError: true, duration: 5000 })
 
@@ -297,8 +318,8 @@ function LlmsDotTxtPage() {
                 includePages: includePagesStatus,
                 crawlers
             })
-            
-            if(response.status === 'Error') 
+
+            if (response.status === 'Error')
                 throw new Error('An error occured')
 
             setIsPostingLlmsDotTxt(false)
@@ -306,11 +327,11 @@ function LlmsDotTxtPage() {
             return
         } catch (error) {
             setIsPostingLlmsDotTxt(false)
-            console.error('Handle Save LLMsDotTxt Data Error: ',error)
+            console.error('Handle Save LLMsDotTxt Data Error: ', error)
             shopify.toast.show('Server Error', { duration: 5000, isError: true })
             return
         }
-    },[collectionsRadio, crawlers, data.shopId, description, includeBlogsStatus, includeCollectionsStatus, includePagesStatus, includeProductsStatus, productsRadio, savedExceptSelectedCollections, savedExceptSelectedProducts, savedSelectedCollections, savedSelectedProducts])
+    }, [collectionsRadio, crawlers, data.shopId, description, includeBlogsStatus, includeCollectionsStatus, includePagesStatus, includeProductsStatus, productsRadio, savedExceptSelectedCollections, savedExceptSelectedProducts, savedSelectedCollections, savedSelectedProducts])
 
     return isLoading ? (
         <SkeletonTablePage />
@@ -319,7 +340,7 @@ function LlmsDotTxtPage() {
             title='LLMs.txt Generator'
             subtitle='Generate Your LLMs.txt File in Seconds — Stay Visible to AI Crawlers'
             backAction={{ content: 'Dashboard', url: '/app' }}
-            secondaryActions={<Button>View LLMs.txt</Button>}
+            secondaryActions={<Button external={true} url={`https://${data.shopDomain}/llms.txt`} >View LLMs.txt</Button>}
             primaryAction={<Button onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
         >
             <Layout>

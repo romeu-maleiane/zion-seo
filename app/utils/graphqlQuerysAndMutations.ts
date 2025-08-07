@@ -152,3 +152,41 @@ export const PAGES_QUERY = `#graphql
     }
   }
 `;
+
+export const GENERATE_URL_REDIRECT_MUTATION = `#graphql
+  mutation UrlRedirectCreate($urlRedirect: UrlRedirectInput!) {
+    urlRedirectCreate(urlRedirect: $urlRedirect) {
+      urlRedirect {
+        id
+        path
+        target
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+` 
+export const GET_URL_REDIRECT_QUERY = `#graphql
+  query {
+  urlRedirects(first: 10, query: "path:/llms.txt") {
+    nodes {
+      id
+      path
+      target
+    }
+  }
+}
+` 
+export const DELETE_URL_REDIRECT_MUTATION = `#graphql
+  mutation {
+  urlRedirectDelete(id: "gid://shopify/UrlRedirect/446899257567") {
+    deletedUrlRedirectId
+    userErrors {
+      field
+      message
+    }
+  }
+}
+` 
