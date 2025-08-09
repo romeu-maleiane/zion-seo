@@ -13,17 +13,18 @@ import SelectedCollectionsModal from 'app/Components/selectedCollectionsModal'
 import { fetchPostLlmsDotTxt } from 'app/utils/fetchPostLlmsDotTxt.client'
 import { DELETE_URL_REDIRECT_MUTATION, GENERATE_URL_REDIRECT_MUTATION, GET_URL_REDIRECT_QUERY, } from 'app/utils/graphqlQuerysAndMutations'
 import { GraphqlQueryError } from "@shopify/shopify-api";
+import { GenericResourceSelectionModal } from 'app/Components/genericModal'
+import { handleFetchNextProductsForModal } from 'app/utils/handleFetchNextProductsForModal.client'
+import { handleFetchNextCollectionsForModal } from 'app/utils/handleFetchNextCollectionsForModal.client'
 
 type LoaderLlmsDotTxtData = {
     productsData: {
         productId: string;
         productImage: string | null;
         title: string;
-        showForLlms: boolean;
     }[]
     collectionsData: {
         title: string;
-        showForLlms: boolean;
         collectionId: string;
         collectionImage: string | null;
     }[]
@@ -50,19 +51,12 @@ type LoaderLlmsDotTxtData = {
     shopDomain: string
 }
 
-type ProductType = {
-    productId: string;
-    productImage: string | null;
+type ResourceType = {
+    id: string;
+    image: string | null;
     title: string;
-    showForLlms: boolean;
 }
 
-type CollectionType = {
-    title: string;
-    showForLlms: boolean;
-    collectionId: string;
-    collectionImage: string | null;
-}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { admin } = await authenticate.admin(request);
@@ -134,7 +128,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                     productId: true,
                     productImage: true,
                     title: true,
-                    showForLlms: true,
                 }
             }),
             prisma.collection.findMany({
@@ -143,7 +136,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                     collectionId: true,
                     collectionImage: true,
                     title: true,
-                    showForLlms: true,
                 }
             }),
             getOrCreateLlmsConfig(shopId)
@@ -178,8 +170,10 @@ function LlmsDotTxtPage() {
     const [selectCollectionsOpen, setSelectCollectionsOpen] = useState(false);
     const [exceptProductsOpen, setExceptProductsOpen] = useState(false);
     const [exceptCollectionsOpen, setExceptCollectionsOpen] = useState(false);
-    const [allProducts, setAllProducts] = useState<ProductType[]>([]);
-    const [collections, setCollections] = useState<CollectionType[]>([]);
+    const [productsToBeSelected, setProductsToBeSelected] = useState<ResourceType[]>([]);
+    const [productsToBeRemoved, setProductsToBeRemoved] = useState<ResourceType[]>([]);
+    const [collectionsToBeSelected, setCollectionsToBeSelected] = useState<ResourceType[]>([]);
+    const [collectionsToBeRemoved, setCollectionsToBeRemoved] = useState<ResourceType[]>([]);
     const [savedSelectedProducts, setSavedSelectedProducts] = useState<string[]>([])
     const [savedSelectedCollections, setSavedSelectedCollections] = useState<string[]>([])
     const [savedExceptSelectedProducts, setSavedExceptSelectedProducts] = useState<string[]>([])
@@ -218,9 +212,21 @@ function LlmsDotTxtPage() {
     ])
 
     useEffect(() => {
+        const productsAsResources = data.productsData.map((product) => ({
+            id: product.productId,
+            image: product.productImage,
+            title: product.title,
+        }))
+        const collectionsAsResources = data.collectionsData.map((collection) => ({
+            id: collection.collectionId,
+            image: collection.collectionImage,
+            title: collection.title,
+        }))
         setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription || '')
-        setAllProducts(data.productsData)
-        setCollections(data.collectionsData)
+        setProductsToBeSelected(productsAsResources)
+        setProductsToBeRemoved(productsAsResources)
+        setCollectionsToBeSelected(collectionsAsResources)
+        setCollectionsToBeRemoved(collectionsAsResources)
         setIncludeProductsStatus(data.LLMDotTxtConfigData.includeProducts)
         setIncludeCollectionsStatus(data.LLMDotTxtConfigData.includeCollections)
         setIncludeBlogsStatus(data.LLMDotTxtConfigData.includeBlogs)
@@ -277,7 +283,7 @@ function LlmsDotTxtPage() {
     const handleOnChangeIncludePages = useCallback(() => setIncludePagesStatus(prev => !prev), [])
 
     const handleProductsRadioChange = useCallback((value: 'all' | 'selected' | 'except') => {
-        setProductsRadio(value)
+        setProductsRadio(value)        
     }, []);
 
     const handleCollectionsRadioChange = useCallback((value: 'all' | 'selected' | 'except') => {
@@ -375,23 +381,55 @@ function LlmsDotTxtPage() {
                             <Divider />
                         </BlockStack>
 
-                        <SelectedProductsModal
+                        {/* Selected Products */}
+                        <GenericResourceSelectionModal
                             modalOpen={selectProductsOpen}
                             setModalOpen={setSelectProductsOpen}
-                            products={allProducts}
+                            resources={productsToBeSelected}
+                            setResources={setProductsToBeSelected}
+                            resourceLabelSingular='Product'
+                            resourceLabelPlural='Products'
+                            savedSelectedIds={savedSelectedProducts}
+                            setSavedSelectedIds={setSavedSelectedProducts}
                             shopId={data.shopId}
-                            setNewProducts={setAllProducts}
+                            title='Selected Products'
+                            fetchResources={handleFetchNextProductsForModal}
+                            paginated={true}
+                        />
+                        {/* <SelectedProductsModal
+                            modalOpen={selectProductsOpen}
+                            setModalOpen={setSelectProductsOpen}
+                            products={productsToBeSelected}
+                            shopId={data.shopId}
+                            setNewProducts={setProductsToBeSelected}
                             savedSelectedProducts={savedSelectedProducts}
                             setSavedSelectedProducts={setSavedSelectedProducts}
-                        />
-                        <ExceptProductsModal
+                        /> */}
+
+                        {/* Except Selected Products */}
+                        <GenericResourceSelectionModal
                             modalOpen={exceptProductsOpen}
                             setModalOpen={setExceptProductsOpen}
-                            products={allProducts} shopId={data.shopId}
-                            setNewProducts={setAllProducts}
+                            resources={productsToBeRemoved}
+                            setResources={setProductsToBeRemoved}
+                            resourceLabelSingular='Product'
+                            resourceLabelPlural='Products'
+                            savedSelectedIds={savedExceptSelectedProducts}
+                            setSavedSelectedIds={setSavedExceptSelectedProducts}
+                            shopId={data.shopId}
+                            title='Except Selected Products'
+                            fetchResources={handleFetchNextProductsForModal}
+                            paginated={true}
+                        />
+                        {/* <ExceptProductsModal
+                            modalOpen={exceptProductsOpen}
+                            setModalOpen={setExceptProductsOpen}
+                            products={productsToBeRemoved} 
+                            shopId={data.shopId}
+                            setNewProducts={setProductsToBeRemoved}
                             savedExceptSelectedProducts={savedExceptSelectedProducts}
                             setSavedExceptSelectedProducts={setSavedExceptSelectedProducts}
-                        />
+                        /> */}
 
                         <Box paddingBlock='300'>
                             <Box>
@@ -453,22 +491,53 @@ function LlmsDotTxtPage() {
 
                         <Divider />
 
-                        <SelectedCollectionsModal
+                        {/* Selected Collections */}
+                        <GenericResourceSelectionModal
                             modalOpen={selectCollectionsOpen}
                             setModalOpen={setSelectCollectionsOpen}
-                            collections={collections} shopId={data.shopId}
-                            setNewCollections={setCollections}
+                            resources={collectionsToBeSelected}
+                            setResources={setCollectionsToBeSelected}
+                            resourceLabelSingular='Collection'
+                            resourceLabelPlural='Collections'
+                            savedSelectedIds={savedSelectedCollections}
+                            setSavedSelectedIds={setSavedSelectedCollections}
+                            shopId={data.shopId}
+                            title='Selected Collections'
+                            fetchResources={handleFetchNextCollectionsForModal}
+                            paginated={false}
+                        />
+                        {/* <SelectedCollectionsModal
+                            modalOpen={selectCollectionsOpen}
+                            setModalOpen={setSelectCollectionsOpen}
+                            collections={collectionsToBeSelected} shopId={data.shopId}
+                            setNewCollections={setCollectionsToBeSelected}
                             savedSelectedCollections={savedSelectedCollections}
                             setSavedSelectedCollections={setSavedSelectedCollections}
-                        />
-                        <ExceptSelectedCollectionsModal
+                        /> */}
+
+                        {/* Except Selected Collections */}
+                        <GenericResourceSelectionModal
                             modalOpen={exceptCollectionsOpen}
                             setModalOpen={setExceptCollectionsOpen}
-                            collections={collections} shopId={data.shopId}
-                            setNewCollections={setCollections}
+                            resources={collectionsToBeRemoved}
+                            setResources={setCollectionsToBeRemoved}
+                            resourceLabelSingular='Collection'
+                            resourceLabelPlural='Collections'
+                            savedSelectedIds={savedExceptSelectedCollections}
+                            setSavedSelectedIds={setSavedExceptSelectedCollections}
+                            shopId={data.shopId}
+                            title='Except Selected Collections'
+                            fetchResources={handleFetchNextCollectionsForModal}
+                            paginated={false}
+                        />
+                        {/* <ExceptSelectedCollectionsModal
+                            modalOpen={exceptCollectionsOpen}
+                            setModalOpen={setExceptCollectionsOpen}
+                            collections={collectionsToBeRemoved} shopId={data.shopId}
+                            setNewCollections={setCollectionsToBeRemoved}
                             savedExceptSelectedCollections={savedExceptSelectedCollections}
                             setSavedExceptSelectedCollections={setSavedExceptSelectedCollections}
-                        />
+                        /> */}
 
                         <Box paddingBlock='200'>
                             <BlockStack>

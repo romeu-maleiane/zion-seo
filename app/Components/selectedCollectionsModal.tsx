@@ -11,7 +11,6 @@ type CollectionType = {
     collectionId: string;
     collectionImage: string | null;
     title: string;
-    showForLlms: boolean;
 }
 
 interface ModalComponentProps {

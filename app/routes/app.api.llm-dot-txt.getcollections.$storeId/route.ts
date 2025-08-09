@@ -5,41 +5,33 @@ import prisma from "app/db.server";
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     try {
 
-        const { storeId, page } = params
+        const { storeId } = params
         const completedStoreId = ('gid://shopify/Shop/').concat('', storeId || '')
-        const pageSize = 20
 
         const url = new URL(request.url);
         const search = url.searchParams.get("search") || undefined;
 
 
 
-        const result = await prisma.product.findMany({
-            skip: parseInt(page || '1') * pageSize,
-            take: pageSize + 1,
+        const currentCollections = await prisma.collection.findMany({
             where: {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined
             },
             select: {
-                productId: true,
-                productImage: true,
+                collectionId: true,
+                collectionImage: true,
                 title: true,
             }
         })
 
-        const hasNextPage = result.length > pageSize
-        const currentProducts = result.slice(0, pageSize)
-
         return Response.json({
-            currentProducts,
-            hasNextPage,
+            currentCollections,
         }, { status: 200 })
     } catch (error) {
         console.error('Get Next Collections API Route Error: ', error)
-        return Response.json({
-            currentProducts: [],
-            hasNextPage: false
+        return Response.json({ 
+            currentCollections: [] 
         }, { status: 500 })
     }
 } 

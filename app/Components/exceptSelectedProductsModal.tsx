@@ -12,7 +12,6 @@ type ProductType = {
     productId: string;
     productImage: string | null;
     title: string;
-    showForLlms: boolean;
 }
 
 interface ModalComponentProps {
