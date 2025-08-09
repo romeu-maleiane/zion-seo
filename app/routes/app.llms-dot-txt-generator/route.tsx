@@ -1,17 +1,13 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
 import { BlockStack, Card, Text, Layout, Page, Box, Checkbox, Divider, RadioButton, Button, TextField } from '@shopify/polaris'
 import Footer from 'app/Components/footer.component'
-import { SelectedProductsModal } from 'app/Components/selectedProductsModal'
 import { useCallback, useEffect, useState } from 'react'
 import prisma from "app/db.server";
 import { authenticate } from 'app/shopify.server'
 import { useLoaderData, useNavigation } from '@remix-run/react'
-import ExceptProductsModal from 'app/Components/exceptSelectedProductsModal'
 import SkeletonTablePage from 'app/Components/skeletonTablePage'
-import ExceptSelectedCollectionsModal from 'app/Components/exceptSelectedCollections'
-import SelectedCollectionsModal from 'app/Components/selectedCollectionsModal'
 import { fetchPostLlmsDotTxt } from 'app/utils/fetchPostLlmsDotTxt.client'
-import { DELETE_URL_REDIRECT_MUTATION, GENERATE_URL_REDIRECT_MUTATION, GET_URL_REDIRECT_QUERY, } from 'app/utils/graphqlQuerysAndMutations'
+import { GENERATE_URL_REDIRECT_MUTATION, } from 'app/utils/graphqlQuerysAndMutations'
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import { GenericResourceSelectionModal } from 'app/Components/genericModal'
 import { handleFetchNextProductsForModal } from 'app/utils/handleFetchNextProductsForModal.client'
@@ -223,14 +219,14 @@ function LlmsDotTxtPage() {
             title: collection.title,
         }))
         setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription || '')
-        setProductsToBeSelected(productsAsResources)
-        setProductsToBeRemoved(productsAsResources)
-        setCollectionsToBeSelected(collectionsAsResources)
-        setCollectionsToBeRemoved(collectionsAsResources)
-        setIncludeProductsStatus(data.LLMDotTxtConfigData.includeProducts)
-        setIncludeCollectionsStatus(data.LLMDotTxtConfigData.includeCollections)
-        setIncludeBlogsStatus(data.LLMDotTxtConfigData.includeBlogs)
-        setIncludePagesStatus(data.LLMDotTxtConfigData.includePages)
+        setProductsToBeSelected([])
+        setProductsToBeRemoved(productsAsResources || [])
+        setCollectionsToBeSelected(collectionsAsResources || [])
+        setCollectionsToBeRemoved(collectionsAsResources || [])
+        setIncludeProductsStatus(data.LLMDotTxtConfigData?.includeProducts)
+        setIncludeCollectionsStatus(data.LLMDotTxtConfigData?.includeCollections)
+        setIncludeBlogsStatus(data.LLMDotTxtConfigData?.includeBlogs)
+        setIncludePagesStatus(data.LLMDotTxtConfigData?.includePages)
         setProductsRadio(() => {
             if (data.LLMDotTxtConfigData.selectAllProducts) return 'all'
             else if (data.LLMDotTxtConfigData.selectedProducts) return 'selected'
@@ -329,7 +325,7 @@ function LlmsDotTxtPage() {
                 throw new Error('An error occured')
 
             setIsPostingLlmsDotTxt(false)
-            shopify.toast.show('LLM.txt updated')
+            shopify.toast.show('LLMs.txt updated')
             return
         } catch (error) {
             setIsPostingLlmsDotTxt(false)

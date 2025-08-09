@@ -1,6 +1,6 @@
 import { Modal, TitleBar } from '@shopify/app-bridge-react';
-import { Text, IndexTable, Thumbnail, Filters, useIndexResourceState } from '@shopify/polaris';
-import { useCallback, useEffect, useState } from 'react';
+import { Text, IndexTable, Thumbnail, Filters, useIndexResourceState, EmptySearchResult } from '@shopify/polaris';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebounce } from "app/hook/useDebounce";
 
 type Resource = {
@@ -20,7 +20,7 @@ interface GenericResourceSelectionModalProps<T extends Resource> {
     title: string;
     resourceLabelSingular: string;
     resourceLabelPlural: string;
-    fetchResources: ({ page, query, shopId }: { page?: number, query?: string, shopId: string} ) => Promise<{ resources: T[]; hasNextPage?: boolean }>;
+    fetchResources: ({ page, query, shopId }: { page?: number, query?: string, shopId: string }) => Promise<{ resources: T[]; hasNextPage?: boolean }>;
     paginated?: boolean;
 }
 
@@ -52,6 +52,8 @@ export function GenericResourceSelectionModal<T extends Resource>({
     const [searchLoading, setSearchLoading] = useState<boolean>(false);
     const [queryValue, setQueryValue] = useState('');
     const debouncedQuery = useDebounce(queryValue, 1000);
+    const isFirstRender = useRef(true);
+
 
     const {
         selectedResources,
@@ -88,12 +90,27 @@ export function GenericResourceSelectionModal<T extends Resource>({
 
     // Search
     useEffect(() => {
+        // Skip effect on first render
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         setPage(0);
         setSearchLoading(true);
         handleGetResources({ page: 0, query: debouncedQuery });
         setSearchLoading(false);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [debouncedQuery]);
+
+    // Empty state
+    const emptyStateMarkup = (
+        <EmptySearchResult
+            title={`No ${resourceLabelPlural.toLowerCase()} yet`}
+            description={`Try changing the search term or create a new ${resourceLabelSingular.toLowerCase()}`}
+            withIllustration
+        />
+    );
 
     // Row markup
     const rowMarkup = resources.map(({ id, image, title }, index) => (
@@ -131,6 +148,7 @@ export function GenericResourceSelectionModal<T extends Resource>({
                 itemCount={resources.length}
                 selectedItemsCount={allResourcesSelected ? 'All' : selectedResources.length}
                 onSelectionChange={handleSelectionChange}
+                emptyState={emptyStateMarkup}
                 headings={[
                     { title: '' },
                     { title: `${resourceLabelSingular} name` },
