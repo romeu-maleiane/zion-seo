@@ -12,6 +12,7 @@ import { GraphqlQueryError } from "@shopify/shopify-api";
 import { GenericResourceSelectionModal } from 'app/Components/genericModal'
 import { handleFetchNextProductsForModal } from 'app/utils/handleFetchNextProductsForModal.client'
 import { handleFetchNextCollectionsForModal } from 'app/utils/handleFetchNextCollectionsForModal.client'
+import SaveBarComponentForLlmsDotTxt from 'app/Components/saveBarForLlmsDotTxt';
 
 type LoaderLlmsDotTxtData = {
     productsData: {
@@ -46,6 +47,8 @@ type LoaderLlmsDotTxtData = {
     shopId: string
     shopDomain: string
 }
+
+type LlmsDotTxtConfigType = LoaderLlmsDotTxtData['LLMDotTxtConfigData']
 
 type ResourceType = {
     id: string;
@@ -155,6 +158,25 @@ function LlmsDotTxtPage() {
     const navigation = useNavigation()
     const isLoading = navigation.state === 'loading'
     const [isPostingLlmsDotTxt, setIsPostingLlmsDotTxt] = useState<boolean>(false)
+    const [originalLlmsDotTxtConfig, setOriginalLlmsDotTxtConfig] = useState<LlmsDotTxtConfigType>({
+        llmDotTxtDescription: '',
+        includeProducts: true,
+        includeCollections: true,
+        includeBlogs: true,
+        includePages: true,
+        selectAllProducts: true,
+        selectedProducts: false,
+        exceptSelectedProducts: false,
+        selectAllCollections: true,
+        selectedCollections: false,
+        exceptSelectedCollections: false,
+        selectChatGPT: true,
+        selectGemini: true,
+        selectGrok: true,
+        selectDeepSeek: true,
+        selectClaude: true,
+        selectPerplexity: true,
+    })
     const [description, setDescription] = useState<string>('')
     const [includeProductsStatus, setIncludeProductsStatus] = useState<boolean>(true)
     const [includeCollectionsStatus, setIncludeCollectionsStatus] = useState<boolean>(true)
@@ -218,8 +240,9 @@ function LlmsDotTxtPage() {
             image: collection.collectionImage,
             title: collection.title,
         }))
+        setOriginalLlmsDotTxtConfig(data.LLMDotTxtConfigData)
         setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription || '')
-        setProductsToBeSelected([])
+        setProductsToBeSelected(productsAsResources || [])
         setProductsToBeRemoved(productsAsResources || [])
         setCollectionsToBeSelected(collectionsAsResources || [])
         setCollectionsToBeRemoved(collectionsAsResources || [])
@@ -279,7 +302,7 @@ function LlmsDotTxtPage() {
     const handleOnChangeIncludePages = useCallback(() => setIncludePagesStatus(prev => !prev), [])
 
     const handleProductsRadioChange = useCallback((value: 'all' | 'selected' | 'except') => {
-        setProductsRadio(value)        
+        setProductsRadio(value)
     }, []);
 
     const handleCollectionsRadioChange = useCallback((value: 'all' | 'selected' | 'except') => {
@@ -323,7 +346,25 @@ function LlmsDotTxtPage() {
 
             if (response.status === 'Error')
                 throw new Error('An error occured')
-
+            setOriginalLlmsDotTxtConfig({
+                llmDotTxtDescription: description,
+                includeProducts: includeProductsStatus,
+                includeCollections: includeCollectionsStatus,
+                includeBlogs: includeBlogsStatus,
+                includePages: includePagesStatus,
+                selectAllProducts: productsRadio === 'all',
+                selectedProducts: productsRadio === 'selected',
+                exceptSelectedProducts: productsRadio === 'except',
+                selectAllCollections: collectionsRadio === 'all',
+                selectedCollections: collectionsRadio === 'selected',
+                exceptSelectedCollections: collectionsRadio === 'except',
+                selectChatGPT: crawlers[0].status,
+                selectGemini: crawlers[1].status,
+                selectGrok: crawlers[2].status,
+                selectDeepSeek: crawlers[3].status,
+                selectClaude: crawlers[4].status,
+                selectPerplexity: crawlers[5].status,
+            })
             setIsPostingLlmsDotTxt(false)
             shopify.toast.show('LLMs.txt updated')
             return
@@ -346,6 +387,35 @@ function LlmsDotTxtPage() {
             primaryAction={<Button onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
         >
             <Layout>
+                <SaveBarComponentForLlmsDotTxt
+                    onSave={handleSaveLLMsDotTxtData}
+                    originalConfig={originalLlmsDotTxtConfig}
+                    newLlmDotTxtDescription={description}
+                    newValueIncludeProducts={includeCollectionsStatus}
+                    newValueIncludeCollections={includeCollectionsStatus}
+                    newValueSelectAllProducts={productsRadio === 'all'}
+                    newValueSelectedProducts={productsRadio === 'selected'}
+                    newValueExceptSelectedProducts={productsRadio === 'except'}
+                    newValueSelectAllCollections={collectionsRadio === 'all'}
+                    newValueSelectedCollections={collectionsRadio === 'selected'}
+                    newValueExceptSelectedCollections={collectionsRadio === 'except'}
+                    newValueIncludeBlogs={includeBlogsStatus}
+                    newValueIncludePages={includePagesStatus}
+                    newValueSelectChatGPT={crawlers[0].status}
+                    newValueSelectGemini={crawlers[1].status}
+                    newValueSelectGrok={crawlers[2].status}
+                    newValueSelectDeepSeek={crawlers[3].status}
+                    newValueSelectClaude={crawlers[4].status}
+                    newValueSelectPerplexity={crawlers[5].status}
+                    resetLlmsDotTxtDescription={setDescription}
+                    resetIncludeProducts={setIncludeProductsStatus}
+                    resetIncludeCollections={setIncludeCollectionsStatus}
+                    resetProductsRadio={setProductsRadio}
+                    resetCollectionsRadio={setCollectionsRadio}
+                    resetIncludeBlogs={setIncludeBlogsStatus}
+                    resetIncludePages={setIncludePagesStatus}
+                    resetCrawlers={setCrawlers}
+                />
                 <Layout.Section>
                     <Card>
                         <BlockStack gap='100'>
@@ -392,15 +462,6 @@ function LlmsDotTxtPage() {
                             fetchResources={handleFetchNextProductsForModal}
                             paginated={true}
                         />
-                        {/* <SelectedProductsModal
-                            modalOpen={selectProductsOpen}
-                            setModalOpen={setSelectProductsOpen}
-                            products={productsToBeSelected}
-                            shopId={data.shopId}
-                            setNewProducts={setProductsToBeSelected}
-                            savedSelectedProducts={savedSelectedProducts}
-                            setSavedSelectedProducts={setSavedSelectedProducts}
-                        /> */}
 
                         {/* Except Selected Products */}
                         <GenericResourceSelectionModal
@@ -417,15 +478,6 @@ function LlmsDotTxtPage() {
                             fetchResources={handleFetchNextProductsForModal}
                             paginated={true}
                         />
-                        {/* <ExceptProductsModal
-                            modalOpen={exceptProductsOpen}
-                            setModalOpen={setExceptProductsOpen}
-                            products={productsToBeRemoved} 
-                            shopId={data.shopId}
-                            setNewProducts={setProductsToBeRemoved}
-                            savedExceptSelectedProducts={savedExceptSelectedProducts}
-                            setSavedExceptSelectedProducts={setSavedExceptSelectedProducts}
-                        /> */}
 
                         <Box paddingBlock='300'>
                             <Box>
@@ -502,14 +554,6 @@ function LlmsDotTxtPage() {
                             fetchResources={handleFetchNextCollectionsForModal}
                             paginated={false}
                         />
-                        {/* <SelectedCollectionsModal
-                            modalOpen={selectCollectionsOpen}
-                            setModalOpen={setSelectCollectionsOpen}
-                            collections={collectionsToBeSelected} shopId={data.shopId}
-                            setNewCollections={setCollectionsToBeSelected}
-                            savedSelectedCollections={savedSelectedCollections}
-                            setSavedSelectedCollections={setSavedSelectedCollections}
-                        /> */}
 
                         {/* Except Selected Collections */}
                         <GenericResourceSelectionModal
@@ -526,14 +570,6 @@ function LlmsDotTxtPage() {
                             fetchResources={handleFetchNextCollectionsForModal}
                             paginated={false}
                         />
-                        {/* <ExceptSelectedCollectionsModal
-                            modalOpen={exceptCollectionsOpen}
-                            setModalOpen={setExceptCollectionsOpen}
-                            collections={collectionsToBeRemoved} shopId={data.shopId}
-                            setNewCollections={setCollectionsToBeRemoved}
-                            savedExceptSelectedCollections={savedExceptSelectedCollections}
-                            setSavedExceptSelectedCollections={setSavedExceptSelectedCollections}
-                        /> */}
 
                         <Box paddingBlock='200'>
                             <BlockStack>
