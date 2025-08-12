@@ -241,7 +241,7 @@ function LlmsDotTxtPage() {
             title: collection.title,
         }))
         setOriginalLlmsDotTxtConfig(data.LLMDotTxtConfigData)
-        setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription || '')
+        setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription)
         setProductsToBeSelected(productsAsResources || [])
         setProductsToBeRemoved(productsAsResources || [])
         setCollectionsToBeSelected(collectionsAsResources || [])
@@ -330,7 +330,7 @@ function LlmsDotTxtPage() {
 
             const response = await fetchPostLlmsDotTxt({
                 storeId: data.shopId,
-                description,
+                description: description || '',
                 includeProducts: includeProductsStatus,
                 includeCollections: includeCollectionsStatus,
                 productRadioResult: productsRadio,
@@ -391,7 +391,7 @@ function LlmsDotTxtPage() {
                     onSave={handleSaveLLMsDotTxtData}
                     originalConfig={originalLlmsDotTxtConfig}
                     newLlmDotTxtDescription={description}
-                    newValueIncludeProducts={includeCollectionsStatus}
+                    newValueIncludeProducts={includeProductsStatus}
                     newValueIncludeCollections={includeCollectionsStatus}
                     newValueSelectAllProducts={productsRadio === 'all'}
                     newValueSelectedProducts={productsRadio === 'selected'}
@@ -428,7 +428,7 @@ function LlmsDotTxtPage() {
                         <Box paddingBlockStart='300'>
                             <TextField
                                 label="Briefly describe your site or content focus."
-                                value={description}
+                                value={description || ''}
                                 onChange={handleOnChangeDescription}
                                 placeholder='Optional description'
                                 multiline={3}

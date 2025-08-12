@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://hunger-marks-balloon-disputes.trycloudflare.com"
+application_url = "https://rain-pacific-clay-ton.trycloudflare.com"
 embedded = true
 
 [build]
@@ -11,7 +11,7 @@ include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [app_proxy]
-url = "https://hunger-marks-balloon-disputes.trycloudflare.com/app/api/proxy"
+url = "https://rain-pacific-clay-ton.trycloudflare.com/app/api/proxy"
 subpath = "llms-txt"
 prefix = "a"
 
@@ -31,7 +31,7 @@ api_version = "2025-04"
 scopes = "write_products,read_products,read_content,write_app_proxy,write_online_store_navigation,read_online_store_navigation,"
 
 [auth]
-redirect_urls = ["https://hunger-marks-balloon-disputes.trycloudflare.com/auth/callback", "https://hunger-marks-balloon-disputes.trycloudflare.com/auth/shopify/callback", "https://hunger-marks-balloon-disputes.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://rain-pacific-clay-ton.trycloudflare.com/auth/callback", "https://rain-pacific-clay-ton.trycloudflare.com/auth/shopify/callback", "https://rain-pacific-clay-ton.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

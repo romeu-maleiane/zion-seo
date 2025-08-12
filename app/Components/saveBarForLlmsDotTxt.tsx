@@ -162,7 +162,26 @@ function SaveBarComponentForLlmsDotTxt({
             || originalConfig.selectDeepSeek !== newValueSelectDeepSeek 
             || originalConfig.selectClaude !== newValueSelectClaude 
             || originalConfig.selectPerplexity !== newValueSelectPerplexity) {
-            
+            console.log('originalConfig.llmDotTxtDescription !== newLlmDotTxtDescription', originalConfig.llmDotTxtDescription !== newLlmDotTxtDescription)
+            console.log('originalConfig.includeProducts !== newValueIncludeProducts', originalConfig.includeProducts !== newValueIncludeProducts)
+            console.log('originalConfig.includeCollections !== newValueIncludeCollections ', originalConfig.includeCollections !== newValueIncludeCollections )
+            console.log('originalConfig.selectAllProducts !== newValueSelectAllProducts ', originalConfig.selectAllProducts !== newValueSelectAllProducts )
+            console.log('originalConfig.selectedProducts !== newValueSelectedProducts ', originalConfig.selectedProducts !== newValueSelectedProducts )
+            console.log('originalConfig.exceptSelectedProducts !== newValueExceptSelectedProducts ', originalConfig.exceptSelectedProducts !== newValueExceptSelectedProducts )
+            console.log('originalConfig.selectAllCollections !== newValueSelectAllCollections ', originalConfig.selectAllCollections !== newValueSelectAllCollections )
+            console.log('originalConfig.selectedCollections !== newValueSelectedCollections ', originalConfig.selectedCollections !== newValueSelectedCollections )
+            console.log('originalConfig.exceptSelectedCollections !== newValueExceptSelectedCollections ', originalConfig.exceptSelectedCollections !== newValueExceptSelectedCollections )
+            console.log('originalConfig.includePages !== newValueIncludePages ', originalConfig.includePages !== newValueIncludePages )
+            console.log('originalConfig.selectChatGPT !== newValueSelectChatGPT ', originalConfig.selectChatGPT !== newValueSelectChatGPT )
+            console.log('originalConfig.selectGemini !== newValueSelectGemini ', originalConfig.selectGemini !== newValueSelectGemini )
+            console.log('originalConfig.selectGrok !== newValueSelectGrok ', originalConfig.selectGrok !== newValueSelectGrok )
+            console.log('originalConfig.selectDeepSeek !== newValueSelectDeepSeek ', originalConfig.selectDeepSeek !== newValueSelectDeepSeek )
+            console.log('originalConfig.selectClaude !== newValueSelectClaude ', originalConfig.selectClaude !== newValueSelectClaude )
+            console.log('originalConfig.selectPerplexity !== newValueSelectPerplexity ', originalConfig.selectPerplexity !== newValueSelectPerplexity )
+            console.log(`
+                
+                
+                ${newLlmDotTxtDescription} and ${(originalConfig.llmDotTxtDescription)}`)
             setSaveBarOpen(true)
             return
         }

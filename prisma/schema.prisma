@@ -110,7 +110,7 @@ model LLMDotTxtConfig {
   id      String @id @default(uuid())
   storeId String
   store   Store  @relation(fields: [storeId], references: [storeId])
-  llmDotTxtDescription String?
+  llmDotTxtDescription String? @default("")
   includeProducts Boolean @default(true)
   includeCollections Boolean @default(true)
   includeBlogs Boolean @default(true)
