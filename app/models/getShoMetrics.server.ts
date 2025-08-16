@@ -45,9 +45,11 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
         where: {
           storeId: shopId,
           AND: [
-            { generatedDescription: { not: null } },
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedDescription: { not: null },
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
@@ -61,8 +63,10 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
         where: {
           storeId: shopId,
           AND: [
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
@@ -72,9 +76,11 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
           metaDataOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
-            { generatedDescription: { not: null } },
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedDescription: { not: null },
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
@@ -84,9 +90,11 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
           metaDataOptimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
-            { generatedDescription: { not: null } },
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedDescription: { not: null },
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
@@ -94,7 +102,7 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
         where: {
           descriptionOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
-          NOT: [{ generatedDescription: null }],
+          NOT: [{ generatedDescription: null, }],
         },
       }),
       prisma.product.count({
@@ -109,8 +117,10 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
           metaDataOptimizedAt: { gte: lastSunday, lte: lastSaturday },
           storeId: shopId,
           AND: [
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
@@ -119,8 +129,10 @@ export const getShopMetrics = async ({ shopId }: { shopId: string }): Promise<Me
           metaDataOptimizedAt: { gte: startOfThisWeek },
           storeId: shopId,
           AND: [
-            { generatedMetaTitle: { not: null } },
-            { generatedMetaDescription: { not: null } },
+            {
+              generatedMetaTitle: { not: null },
+              generatedMetaDescription: { not: null }
+            },
           ],
         },
       }),
