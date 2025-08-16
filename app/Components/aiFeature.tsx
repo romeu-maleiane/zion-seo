@@ -20,9 +20,7 @@ function AiFeature({title, subTitle, aiCredits, action, loading}: AiFeatureProps
                     <InlineStack gap='200' wrap={false}>
                         <Image src='/assets/imgs/ia.png' width={40} height={40} alt='ai image' />
                         <BlockStack>
-                            <div style={{ color: 'var(--p-color-text-magic-secondary)' }}>
-                                <Text as='h2' variant="headingLg" fontWeight='medium'>{title}</Text>
-                            </div>
+                            <h2 className='Polaris-Text--root Polaris-Text--headingLg Polaris-Text--medium ai-text-color'>{title}</h2>
                             <Text as='p'>
                                 {subTitle}
                             </Text>
@@ -35,9 +33,7 @@ function AiFeature({title, subTitle, aiCredits, action, loading}: AiFeatureProps
                     </Box>
                     <InlineStack align='space-between'>
                         <Text as='span'>{aiCredits} Credits available</Text>
-                        <div className='ai-text-color'>
-                            <Link removeUnderline url='sasa'>Buy Credits</Link>
-                        </div>
+                        <Link removeUnderline url='sasa'>Buy Credits</Link>
                     </InlineStack>
                 </BlockStack>
             </Card>

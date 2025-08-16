@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from '@remix-run/node'
-import { BlockStack, Card, Text, Layout, Page, Box, Checkbox, Divider, RadioButton, Button, TextField } from '@shopify/polaris'
+import { BlockStack, Card, Text, Layout, Page, Box, Checkbox, Divider, RadioButton, Button, TextField, } from '@shopify/polaris'
 import Footer from 'app/Components/footer.component'
 import { useCallback, useEffect, useState } from 'react'
 import prisma from "app/db.server";
@@ -13,6 +13,7 @@ import { GenericResourceSelectionModal } from 'app/Components/genericModal'
 import { handleFetchNextProductsForModal } from 'app/utils/handleFetchNextProductsForModal.client'
 import { handleFetchNextCollectionsForModal } from 'app/utils/handleFetchNextCollectionsForModal.client'
 import SaveBarComponentForLlmsDotTxt from 'app/Components/saveBarForLlmsDotTxt';
+import LlmsDotTxtBlocked from 'app/Components/llmsDotTxtBlocked';
 
 type LoaderLlmsDotTxtData = {
     productsData: {
@@ -46,6 +47,7 @@ type LoaderLlmsDotTxtData = {
     }
     shopId: string
     shopDomain: string
+    featureBlocked?: boolean
 }
 
 type LlmsDotTxtConfigType = LoaderLlmsDotTxtData['LLMDotTxtConfigData']
@@ -77,6 +79,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
         const shopId: string = shopData.data.shop.id
         const shopDomain: string = shopData.data.shop.primaryDomain.host
+
+        const planStatus = await prisma.store.findMany({
+            where: { storeId: shopId },
+            select: {
+                activePlan: true
+            }
+        })
+
+        if (planStatus[0].activePlan === 'free') return Response.json({ message: 'You need to upgrade your plan to access this feature', featureBlocked: true }, { status: 403 })
 
         const getOrCreateLlmsConfig = async (shopId: string) => {
             let config = await prisma.lLMDotTxtConfig.findFirst({
@@ -141,7 +152,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         ])
 
 
-        return Response.json({ productsData, collectionsData, LLMDotTxtConfigData, shopId, shopDomain }, { status: 200 })
+        return Response.json({ productsData, collectionsData, LLMDotTxtConfigData, shopId, shopDomain, featureBlocked: false }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
             console.error('LLMs.txt Graphql Error: ', error.body?.errors)
@@ -229,69 +240,72 @@ function LlmsDotTxtPage() {
         },
     ])
 
+
     useEffect(() => {
-        const productsAsResources = data.productsData.map((product) => ({
-            id: product.productId,
-            image: product.productImage,
-            title: product.title,
-        }))
-        const collectionsAsResources = data.collectionsData.map((collection) => ({
-            id: collection.collectionId,
-            image: collection.collectionImage,
-            title: collection.title,
-        }))
-        setOriginalLlmsDotTxtConfig(data.LLMDotTxtConfigData)
-        setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription)
-        setProductsToBeSelected(productsAsResources || [])
-        setProductsToBeRemoved(productsAsResources || [])
-        setCollectionsToBeSelected(collectionsAsResources || [])
-        setCollectionsToBeRemoved(collectionsAsResources || [])
-        setIncludeProductsStatus(data.LLMDotTxtConfigData?.includeProducts)
-        setIncludeCollectionsStatus(data.LLMDotTxtConfigData?.includeCollections)
-        setIncludeBlogsStatus(data.LLMDotTxtConfigData?.includeBlogs)
-        setIncludePagesStatus(data.LLMDotTxtConfigData?.includePages)
-        setProductsRadio(() => {
-            if (data.LLMDotTxtConfigData.selectAllProducts) return 'all'
-            else if (data.LLMDotTxtConfigData.selectedProducts) return 'selected'
-            else return 'except'
-        })
-        setCollectionsRadio(() => {
-            if (data.LLMDotTxtConfigData.selectAllCollections) return 'all'
-            else if (data.LLMDotTxtConfigData.selectedCollections) return 'selected'
-            else return 'except'
-        })
-        setCrawlers([
-            {
-                label: 'ChatGPT',
-                id: 'chatgpt',
-                status: data.LLMDotTxtConfigData.selectChatGPT
-            },
-            {
-                label: 'Gemini',
-                id: 'gemini',
-                status: data.LLMDotTxtConfigData.selectGemini
-            },
-            {
-                label: 'Grok',
-                id: 'grok',
-                status: data.LLMDotTxtConfigData.selectGrok
-            },
-            {
-                label: 'DeepSeek',
-                id: 'deepseek',
-                status: data.LLMDotTxtConfigData.selectDeepSeek
-            },
-            {
-                label: 'Claude',
-                id: 'claude',
-                status: data.LLMDotTxtConfigData.selectClaude
-            },
-            {
-                label: 'Perplexity',
-                id: 'perplexity',
-                status: data.LLMDotTxtConfigData.selectPerplexity
-            },
-        ])
+        if (!data.featureBlocked) {
+            const productsAsResources = data.productsData.map((product) => ({
+                id: product.productId,
+                image: product.productImage,
+                title: product.title,
+            }))
+            const collectionsAsResources = data.collectionsData.map((collection) => ({
+                id: collection.collectionId,
+                image: collection.collectionImage,
+                title: collection.title,
+            }))
+            setOriginalLlmsDotTxtConfig(data.LLMDotTxtConfigData)
+            setDescription(data.LLMDotTxtConfigData?.llmDotTxtDescription)
+            setProductsToBeSelected(productsAsResources || [])
+            setProductsToBeRemoved(productsAsResources || [])
+            setCollectionsToBeSelected(collectionsAsResources || [])
+            setCollectionsToBeRemoved(collectionsAsResources || [])
+            setIncludeProductsStatus(data.LLMDotTxtConfigData?.includeProducts)
+            setIncludeCollectionsStatus(data.LLMDotTxtConfigData?.includeCollections)
+            setIncludeBlogsStatus(data.LLMDotTxtConfigData?.includeBlogs)
+            setIncludePagesStatus(data.LLMDotTxtConfigData?.includePages)
+            setProductsRadio(() => {
+                if (data.LLMDotTxtConfigData.selectAllProducts) return 'all'
+                else if (data.LLMDotTxtConfigData.selectedProducts) return 'selected'
+                else return 'except'
+            })
+            setCollectionsRadio(() => {
+                if (data.LLMDotTxtConfigData.selectAllCollections) return 'all'
+                else if (data.LLMDotTxtConfigData.selectedCollections) return 'selected'
+                else return 'except'
+            })
+            setCrawlers([
+                {
+                    label: 'ChatGPT',
+                    id: 'chatgpt',
+                    status: data.LLMDotTxtConfigData.selectChatGPT
+                },
+                {
+                    label: 'Gemini',
+                    id: 'gemini',
+                    status: data.LLMDotTxtConfigData.selectGemini
+                },
+                {
+                    label: 'Grok',
+                    id: 'grok',
+                    status: data.LLMDotTxtConfigData.selectGrok
+                },
+                {
+                    label: 'DeepSeek',
+                    id: 'deepseek',
+                    status: data.LLMDotTxtConfigData.selectDeepSeek
+                },
+                {
+                    label: 'Claude',
+                    id: 'claude',
+                    status: data.LLMDotTxtConfigData.selectClaude
+                },
+                {
+                    label: 'Perplexity',
+                    id: 'perplexity',
+                    status: data.LLMDotTxtConfigData.selectPerplexity
+                },
+            ])
+        }
     }, [data,])
 
     const handleOnChangeDescription = useCallback((value: string) => setDescription(value), [])
@@ -383,295 +397,304 @@ function LlmsDotTxtPage() {
             title='LLMs.txt Generator'
             subtitle='Generate Your LLMs.txt File in Seconds — Stay Visible to AI Crawlers'
             backAction={{ content: 'Dashboard', url: '/app' }}
-            secondaryActions={<Button external={true} url={`https://${data.shopDomain}/llms.txt`} >View LLMs.txt</Button>}
-            primaryAction={<Button onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
+            secondaryActions={<Button disabled={data.featureBlocked} external={true} url={`https://${data.shopDomain}/llms.txt`} >View LLMs.txt</Button>}
+            primaryAction={<Button disabled={data.featureBlocked} onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
         >
             <Layout>
-                <SaveBarComponentForLlmsDotTxt
-                    onSave={handleSaveLLMsDotTxtData}
-                    originalConfig={originalLlmsDotTxtConfig}
-                    newLlmDotTxtDescription={description}
-                    newValueIncludeProducts={includeProductsStatus}
-                    newValueIncludeCollections={includeCollectionsStatus}
-                    newValueSelectAllProducts={productsRadio === 'all'}
-                    newValueSelectedProducts={productsRadio === 'selected'}
-                    newValueExceptSelectedProducts={productsRadio === 'except'}
-                    newValueSelectAllCollections={collectionsRadio === 'all'}
-                    newValueSelectedCollections={collectionsRadio === 'selected'}
-                    newValueExceptSelectedCollections={collectionsRadio === 'except'}
-                    newValueIncludeBlogs={includeBlogsStatus}
-                    newValueIncludePages={includePagesStatus}
-                    newValueSelectChatGPT={crawlers[0].status}
-                    newValueSelectGemini={crawlers[1].status}
-                    newValueSelectGrok={crawlers[2].status}
-                    newValueSelectDeepSeek={crawlers[3].status}
-                    newValueSelectClaude={crawlers[4].status}
-                    newValueSelectPerplexity={crawlers[5].status}
-                    resetLlmsDotTxtDescription={setDescription}
-                    resetIncludeProducts={setIncludeProductsStatus}
-                    resetIncludeCollections={setIncludeCollectionsStatus}
-                    resetProductsRadio={setProductsRadio}
-                    resetCollectionsRadio={setCollectionsRadio}
-                    resetIncludeBlogs={setIncludeBlogsStatus}
-                    resetIncludePages={setIncludePagesStatus}
-                    resetCrawlers={setCrawlers}
-                />
-                <Layout.Section>
-                    <Card>
-                        <BlockStack gap='100'>
-                            <Text as='h2' variant="headingLg" fontWeight='medium'>
-                                Description (Optional)
-                            </Text>
-                            <Divider />
-                        </BlockStack>
-
-                        <Box paddingBlockStart='300'>
-                            <TextField
-                                label="Briefly describe your site or content focus."
-                                value={description || ''}
-                                onChange={handleOnChangeDescription}
-                                placeholder='Optional description'
-                                multiline={3}
-                                autoComplete="off"
-                            />
-                        </Box>
-                    </Card>
-                </Layout.Section>
-
-                <Layout.Section>
-                    <Card>
-                        <BlockStack gap='100'>
-                            <Text as='h2' variant="headingLg" fontWeight='medium'>
-                                Content Selection
-                            </Text>
-                            <Divider />
-                        </BlockStack>
-
-                        {/* Selected Products */}
-                        <GenericResourceSelectionModal
-                            modalOpen={selectProductsOpen}
-                            setModalOpen={setSelectProductsOpen}
-                            resources={productsToBeSelected}
-                            setResources={setProductsToBeSelected}
-                            resourceLabelSingular='Product'
-                            resourceLabelPlural='Products'
-                            savedSelectedIds={savedSelectedProducts}
-                            setSavedSelectedIds={setSavedSelectedProducts}
-                            shopId={data.shopId}
-                            title='Selected Products'
-                            fetchResources={handleFetchNextProductsForModal}
-                            paginated={true}
+                {data.featureBlocked ?
+                    <Layout.Section>
+                        <LlmsDotTxtBlocked />
+                    </Layout.Section>
+                    :
+                    <>
+                        <SaveBarComponentForLlmsDotTxt
+                            onSave={handleSaveLLMsDotTxtData}
+                            originalConfig={originalLlmsDotTxtConfig}
+                            newLlmDotTxtDescription={description}
+                            newValueIncludeProducts={includeProductsStatus}
+                            newValueIncludeCollections={includeCollectionsStatus}
+                            newValueSelectAllProducts={productsRadio === 'all'}
+                            newValueSelectedProducts={productsRadio === 'selected'}
+                            newValueExceptSelectedProducts={productsRadio === 'except'}
+                            newValueSelectAllCollections={collectionsRadio === 'all'}
+                            newValueSelectedCollections={collectionsRadio === 'selected'}
+                            newValueExceptSelectedCollections={collectionsRadio === 'except'}
+                            newValueIncludeBlogs={includeBlogsStatus}
+                            newValueIncludePages={includePagesStatus}
+                            newValueSelectChatGPT={crawlers[0].status}
+                            newValueSelectGemini={crawlers[1].status}
+                            newValueSelectGrok={crawlers[2].status}
+                            newValueSelectDeepSeek={crawlers[3].status}
+                            newValueSelectClaude={crawlers[4].status}
+                            newValueSelectPerplexity={crawlers[5].status}
+                            resetLlmsDotTxtDescription={setDescription}
+                            resetIncludeProducts={setIncludeProductsStatus}
+                            resetIncludeCollections={setIncludeCollectionsStatus}
+                            resetProductsRadio={setProductsRadio}
+                            resetCollectionsRadio={setCollectionsRadio}
+                            resetIncludeBlogs={setIncludeBlogsStatus}
+                            resetIncludePages={setIncludePagesStatus}
+                            resetCrawlers={setCrawlers}
                         />
+                        <Layout.Section>
+                            <Card>
+                                <BlockStack gap='100'>
+                                    <Text as='h2' variant="headingLg" fontWeight='medium'>
+                                        Description (Optional)
+                                    </Text>
+                                    <Divider />
+                                </BlockStack>
 
-                        {/* Except Selected Products */}
-                        <GenericResourceSelectionModal
-                            modalOpen={exceptProductsOpen}
-                            setModalOpen={setExceptProductsOpen}
-                            resources={productsToBeRemoved}
-                            setResources={setProductsToBeRemoved}
-                            resourceLabelSingular='Product'
-                            resourceLabelPlural='Products'
-                            savedSelectedIds={savedExceptSelectedProducts}
-                            setSavedSelectedIds={setSavedExceptSelectedProducts}
-                            shopId={data.shopId}
-                            title='Except Selected Products'
-                            fetchResources={handleFetchNextProductsForModal}
-                            paginated={true}
-                        />
-
-                        <Box paddingBlock='300'>
-                            <Box>
-                                <Text as='p'>
-                                    Choose which products, collections, blog posts, and pages to include in the file.
-                                </Text>
-                            </Box>
-
-                            <BlockStack>
-
-                                <Checkbox
-                                    label={'Include Products'}
-                                    checked={includeProductsStatus}
-                                    onChange={handleOnChangeIncludeProducts}
-                                />
-                                {includeProductsStatus ?
-                                    <Box paddingInlineStart='600'>
-                                        <BlockStack>
-                                            <RadioButton
-                                                label='All products'
-                                                checked={productsRadio === 'all'}
-                                                onChange={() => handleProductsRadioChange('all')}
-                                            />
-                                            <RadioButton
-                                                label='Selected products'
-                                                checked={productsRadio === 'selected'}
-                                                onChange={() => handleProductsRadioChange('selected')}
-                                            />
-                                            <RadioButton
-                                                label='All products execept selected'
-                                                checked={productsRadio === 'except'}
-                                                onChange={() => handleProductsRadioChange('except')}
-                                            />
-
-                                            {productsRadio === 'selected' || productsRadio === 'except' ?
-                                                <div style={{ width: '200px' }}>
-                                                    <Box paddingBlockStart='100'>
-                                                        <Button
-                                                            onClick={productsRadio === 'selected' ?
-                                                                () => setSelectProductsOpen(true)
-                                                                : productsRadio === 'except'
-                                                                    ? () => setExceptProductsOpen(true)
-                                                                    : () => { setExceptProductsOpen(false); setSelectProductsOpen(false) }
-                                                            }
-                                                        >
-                                                            {productsRadio === 'selected' && savedSelectedProducts.length > 0 || productsRadio === 'except' && savedExceptSelectedProducts.length > 0 ? `${productsRadio === 'selected' ? savedSelectedProducts.length : savedExceptSelectedProducts.length} Products Selected` : 'Select Products'}
-                                                        </Button>
-                                                    </Box>
-                                                </div>
-                                                :
-                                                null
-                                            }
-                                        </BlockStack>
-                                    </Box>
-                                    : null
-                                }
-                            </BlockStack>
-                        </Box>
-
-                        <Divider />
-
-                        {/* Selected Collections */}
-                        <GenericResourceSelectionModal
-                            modalOpen={selectCollectionsOpen}
-                            setModalOpen={setSelectCollectionsOpen}
-                            resources={collectionsToBeSelected}
-                            setResources={setCollectionsToBeSelected}
-                            resourceLabelSingular='Collection'
-                            resourceLabelPlural='Collections'
-                            savedSelectedIds={savedSelectedCollections}
-                            setSavedSelectedIds={setSavedSelectedCollections}
-                            shopId={data.shopId}
-                            title='Selected Collections'
-                            fetchResources={handleFetchNextCollectionsForModal}
-                            paginated={false}
-                        />
-
-                        {/* Except Selected Collections */}
-                        <GenericResourceSelectionModal
-                            modalOpen={exceptCollectionsOpen}
-                            setModalOpen={setExceptCollectionsOpen}
-                            resources={collectionsToBeRemoved}
-                            setResources={setCollectionsToBeRemoved}
-                            resourceLabelSingular='Collection'
-                            resourceLabelPlural='Collections'
-                            savedSelectedIds={savedExceptSelectedCollections}
-                            setSavedSelectedIds={setSavedExceptSelectedCollections}
-                            shopId={data.shopId}
-                            title='Except Selected Collections'
-                            fetchResources={handleFetchNextCollectionsForModal}
-                            paginated={false}
-                        />
-
-                        <Box paddingBlock='200'>
-                            <BlockStack>
-                                <Checkbox
-                                    label={'Include Collections'}
-                                    checked={includeCollectionsStatus}
-                                    onChange={handleOnChangeIncludeCollections}
-                                />
-
-                                {includeCollectionsStatus ?
-                                    <Box paddingInlineStart='600'>
-                                        <BlockStack>
-                                            <RadioButton
-                                                label='All collections'
-                                                checked={collectionsRadio === 'all'}
-                                                onChange={() => handleCollectionsRadioChange('all')}
-                                            />
-                                            <RadioButton
-                                                label='Selected collections'
-                                                checked={collectionsRadio === 'selected'}
-                                                onChange={() => handleCollectionsRadioChange('selected')}
-                                            />
-                                            <RadioButton
-                                                label='All collections execept selected'
-                                                checked={collectionsRadio === 'except'}
-                                                onChange={() => handleCollectionsRadioChange('except')}
-                                            />
-
-                                            {collectionsRadio === 'selected' || collectionsRadio === 'except' ?
-                                                <div style={{ width: '200px' }}>
-                                                    <Box paddingBlockStart='100'>
-                                                        <Button
-                                                            onClick={collectionsRadio === 'selected' ?
-                                                                () => setSelectCollectionsOpen(true)
-                                                                : collectionsRadio === 'except'
-                                                                    ? () => setExceptCollectionsOpen(true)
-                                                                    : () => { setExceptCollectionsOpen(false); setSelectCollectionsOpen(false) }
-                                                            }
-                                                        >
-                                                            {collectionsRadio === 'selected' && savedSelectedCollections.length > 0 || collectionsRadio === 'except' && savedExceptSelectedCollections.length > 0 ? `${collectionsRadio === 'selected' ? savedSelectedCollections.length : savedExceptSelectedCollections.length} Collections Selected` : 'Select Collections'}
-                                                        </Button>
-                                                    </Box>
-                                                </div>
-                                                :
-                                                null
-                                            }
-                                        </BlockStack>
-                                    </Box>
-                                    : null
-                                }
-                            </BlockStack>
-                        </Box>
-
-                        <Divider />
-
-                        <Box paddingBlock='200'>
-                            <Checkbox
-                                label={'Include Blogs'}
-                                checked={includeBlogsStatus}
-                                onChange={handleOnChangeIncludeBlogs}
-                            />
-                        </Box>
-
-                        <Divider />
-
-                        <Box paddingBlock='200'>
-                            <Checkbox
-                                label={'Include Pages'}
-                                checked={includePagesStatus}
-                                onChange={handleOnChangeIncludePages}
-                            />
-                        </Box>
-                    </Card>
-                </Layout.Section>
-
-                <Layout.Section>
-                    <Card>
-                        <BlockStack gap='100'>
-                            <Text as='h2' variant="headingLg" fontWeight='medium'>
-                                Crawler Access
-                            </Text>
-                            <Divider />
-                        </BlockStack>
-
-                        <Box paddingBlockStart='300'>
-                            <Box>
-                                <Text as='p'>
-                                    Select which LLM crawlers are allowed. All are enabled by default.
-                                </Text>
-                            </Box>
-                            <BlockStack gap='200'>
-                                {crawlers.map(crawler => (
-                                    <Checkbox key={crawler.id}
-                                        label={crawler.label}
-                                        checked={crawler.status}
-                                        onChange={() => handleOnChageCrawlerStatus(crawler.id)}
+                                <Box paddingBlockStart='300'>
+                                    <TextField
+                                        label="Briefly describe your site or content focus."
+                                        value={description || ''}
+                                        onChange={handleOnChangeDescription}
+                                        placeholder='Optional description'
+                                        multiline={3}
+                                        autoComplete="off"
                                     />
-                                ))}
-                            </BlockStack>
-                        </Box>
-                    </Card>
-                </Layout.Section>
+                                </Box>
+                            </Card>
+                        </Layout.Section>
+
+                        <Layout.Section>
+                            <Card>
+                                <BlockStack gap='100'>
+                                    <Text as='h2' variant="headingLg" fontWeight='medium'>
+                                        Content Selection
+                                    </Text>
+                                    <Divider />
+                                </BlockStack>
+
+                                {/* Selected Products */}
+                                <GenericResourceSelectionModal
+                                    modalOpen={selectProductsOpen}
+                                    setModalOpen={setSelectProductsOpen}
+                                    resources={productsToBeSelected}
+                                    setResources={setProductsToBeSelected}
+                                    resourceLabelSingular='Product'
+                                    resourceLabelPlural='Products'
+                                    savedSelectedIds={savedSelectedProducts}
+                                    setSavedSelectedIds={setSavedSelectedProducts}
+                                    shopId={data.shopId}
+                                    title='Selected Products'
+                                    fetchResources={handleFetchNextProductsForModal}
+                                    paginated={true}
+                                />
+
+                                {/* Except Selected Products */}
+                                <GenericResourceSelectionModal
+                                    modalOpen={exceptProductsOpen}
+                                    setModalOpen={setExceptProductsOpen}
+                                    resources={productsToBeRemoved}
+                                    setResources={setProductsToBeRemoved}
+                                    resourceLabelSingular='Product'
+                                    resourceLabelPlural='Products'
+                                    savedSelectedIds={savedExceptSelectedProducts}
+                                    setSavedSelectedIds={setSavedExceptSelectedProducts}
+                                    shopId={data.shopId}
+                                    title='Except Selected Products'
+                                    fetchResources={handleFetchNextProductsForModal}
+                                    paginated={true}
+                                />
+
+                                <Box paddingBlock='300'>
+                                    <Box>
+                                        <Text as='p'>
+                                            Choose which products, collections, blog posts, and pages to include in the file.
+                                        </Text>
+                                    </Box>
+
+                                    <BlockStack>
+
+                                        <Checkbox
+                                            label={'Include Products'}
+                                            checked={includeProductsStatus}
+                                            onChange={handleOnChangeIncludeProducts}
+                                        />
+                                        {includeProductsStatus ?
+                                            <Box paddingInlineStart='600'>
+                                                <BlockStack>
+                                                    <RadioButton
+                                                        label='All products'
+                                                        checked={productsRadio === 'all'}
+                                                        onChange={() => handleProductsRadioChange('all')}
+                                                    />
+                                                    <RadioButton
+                                                        label='Selected products'
+                                                        checked={productsRadio === 'selected'}
+                                                        onChange={() => handleProductsRadioChange('selected')}
+                                                    />
+                                                    <RadioButton
+                                                        label='All products execept selected'
+                                                        checked={productsRadio === 'except'}
+                                                        onChange={() => handleProductsRadioChange('except')}
+                                                    />
+
+                                                    {productsRadio === 'selected' || productsRadio === 'except' ?
+                                                        <div style={{ width: '200px' }}>
+                                                            <Box paddingBlockStart='100'>
+                                                                <Button
+                                                                    onClick={productsRadio === 'selected' ?
+                                                                        () => setSelectProductsOpen(true)
+                                                                        : productsRadio === 'except'
+                                                                            ? () => setExceptProductsOpen(true)
+                                                                            : () => { setExceptProductsOpen(false); setSelectProductsOpen(false) }
+                                                                    }
+                                                                >
+                                                                    {productsRadio === 'selected' && savedSelectedProducts.length > 0 || productsRadio === 'except' && savedExceptSelectedProducts.length > 0 ? `${productsRadio === 'selected' ? savedSelectedProducts.length : savedExceptSelectedProducts.length} Products Selected` : 'Select Products'}
+                                                                </Button>
+                                                            </Box>
+                                                        </div>
+                                                        :
+                                                        null
+                                                    }
+                                                </BlockStack>
+                                            </Box>
+                                            : null
+                                        }
+                                    </BlockStack>
+                                </Box>
+
+                                <Divider />
+
+                                {/* Selected Collections */}
+                                <GenericResourceSelectionModal
+                                    modalOpen={selectCollectionsOpen}
+                                    setModalOpen={setSelectCollectionsOpen}
+                                    resources={collectionsToBeSelected}
+                                    setResources={setCollectionsToBeSelected}
+                                    resourceLabelSingular='Collection'
+                                    resourceLabelPlural='Collections'
+                                    savedSelectedIds={savedSelectedCollections}
+                                    setSavedSelectedIds={setSavedSelectedCollections}
+                                    shopId={data.shopId}
+                                    title='Selected Collections'
+                                    fetchResources={handleFetchNextCollectionsForModal}
+                                    paginated={false}
+                                />
+
+                                {/* Except Selected Collections */}
+                                <GenericResourceSelectionModal
+                                    modalOpen={exceptCollectionsOpen}
+                                    setModalOpen={setExceptCollectionsOpen}
+                                    resources={collectionsToBeRemoved}
+                                    setResources={setCollectionsToBeRemoved}
+                                    resourceLabelSingular='Collection'
+                                    resourceLabelPlural='Collections'
+                                    savedSelectedIds={savedExceptSelectedCollections}
+                                    setSavedSelectedIds={setSavedExceptSelectedCollections}
+                                    shopId={data.shopId}
+                                    title='Except Selected Collections'
+                                    fetchResources={handleFetchNextCollectionsForModal}
+                                    paginated={false}
+                                />
+
+                                <Box paddingBlock='200'>
+                                    <BlockStack>
+                                        <Checkbox
+                                            label={'Include Collections'}
+                                            checked={includeCollectionsStatus}
+                                            onChange={handleOnChangeIncludeCollections}
+                                        />
+
+                                        {includeCollectionsStatus ?
+                                            <Box paddingInlineStart='600'>
+                                                <BlockStack>
+                                                    <RadioButton
+                                                        label='All collections'
+                                                        checked={collectionsRadio === 'all'}
+                                                        onChange={() => handleCollectionsRadioChange('all')}
+                                                    />
+                                                    <RadioButton
+                                                        label='Selected collections'
+                                                        checked={collectionsRadio === 'selected'}
+                                                        onChange={() => handleCollectionsRadioChange('selected')}
+                                                    />
+                                                    <RadioButton
+                                                        label='All collections execept selected'
+                                                        checked={collectionsRadio === 'except'}
+                                                        onChange={() => handleCollectionsRadioChange('except')}
+                                                    />
+
+                                                    {collectionsRadio === 'selected' || collectionsRadio === 'except' ?
+                                                        <div style={{ width: '200px' }}>
+                                                            <Box paddingBlockStart='100'>
+                                                                <Button
+                                                                    onClick={collectionsRadio === 'selected' ?
+                                                                        () => setSelectCollectionsOpen(true)
+                                                                        : collectionsRadio === 'except'
+                                                                            ? () => setExceptCollectionsOpen(true)
+                                                                            : () => { setExceptCollectionsOpen(false); setSelectCollectionsOpen(false) }
+                                                                    }
+                                                                >
+                                                                    {collectionsRadio === 'selected' && savedSelectedCollections.length > 0 || collectionsRadio === 'except' && savedExceptSelectedCollections.length > 0 ? `${collectionsRadio === 'selected' ? savedSelectedCollections.length : savedExceptSelectedCollections.length} Collections Selected` : 'Select Collections'}
+                                                                </Button>
+                                                            </Box>
+                                                        </div>
+                                                        :
+                                                        null
+                                                    }
+                                                </BlockStack>
+                                            </Box>
+                                            : null
+                                        }
+                                    </BlockStack>
+                                </Box>
+
+                                <Divider />
+
+                                <Box paddingBlock='200'>
+                                    <Checkbox
+                                        label={'Include Blogs'}
+                                        checked={includeBlogsStatus}
+                                        onChange={handleOnChangeIncludeBlogs}
+                                    />
+                                </Box>
+
+                                <Divider />
+
+                                <Box paddingBlock='200'>
+                                    <Checkbox
+                                        label={'Include Pages'}
+                                        checked={includePagesStatus}
+                                        onChange={handleOnChangeIncludePages}
+                                    />
+                                </Box>
+                            </Card>
+                        </Layout.Section>
+
+                        <Layout.Section>
+                            <Card>
+                                <BlockStack gap='100'>
+                                    <Text as='h2' variant="headingLg" fontWeight='medium'>
+                                        Crawler Access
+                                    </Text>
+                                    <Divider />
+                                </BlockStack>
+
+                                <Box paddingBlockStart='300'>
+                                    <Box>
+                                        <Text as='p'>
+                                            Select which LLM crawlers are allowed. All are enabled by default.
+                                        </Text>
+                                    </Box>
+                                    <BlockStack gap='200'>
+                                        {crawlers.map(crawler => (
+                                            <Checkbox key={crawler.id}
+                                                label={crawler.label}
+                                                checked={crawler.status}
+                                                onChange={() => handleOnChageCrawlerStatus(crawler.id)}
+                                            />
+                                        ))}
+                                    </BlockStack>
+                                </Box>
+                            </Card>
+                        </Layout.Section>
+
+                    </>
+                }
 
                 <Layout.Section>
                     <Footer />

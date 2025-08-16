@@ -2,7 +2,7 @@ import { BlockStack, Box, Text, Button, Card, Form, FormLayout, InlineStack, Lay
 import {
   XCircleIcon,
 } from '@shopify/polaris-icons';
-import "../styles/customStyle.css";
+import "../../styles/customStyle.css";
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { authenticate } from "app/shopify.server";

@@ -16,7 +16,7 @@ import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import Paragraph from '@tiptap/extension-paragraph'
-import '../routes/styles/editorStyles.css'
+import '../styles/editorStyles.css'
 
 interface EditorProps {
   type: string

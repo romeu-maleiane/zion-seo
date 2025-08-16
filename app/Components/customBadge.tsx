@@ -1,4 +1,4 @@
-import '../routes/styles/customBadgeStyle.css'
+import '../styles/customBadgeStyle.css'
 
 interface CustomBadgeProps {
     tone: 'success' | 'magic' | 'base' | undefined
