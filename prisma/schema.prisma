@@ -33,21 +33,21 @@ model Session {
 }
 
 model Store {
-  id              String            @id @default(uuid())
-  storeId         String            @unique
-  storeName       String
-  storeDomain     String            @unique
-  email           String            @unique
-  products        Product[]
-  collections     Collection[]
-  pages           Page[]
-  blogs           Blog[]
-  llmDotTxtConfig LLMDotTxtConfig[]
+  id                String            @id @default(uuid())
+  storeId           String            @unique
+  storeName         String
+  storeDomain       String            @unique
+  email             String            @unique
+  products          Product[]
+  collections       Collection[]
+  pages             Page[]
+  blogs             Blog[]
+  llmDotTxtConfig   LLMDotTxtConfig[]
   urlRedirectLlmsId String?
-  activePlan      String            @default("free")
-  aiCredits       Int               @default(20)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  activePlan        String            @default("free")
+  aiCredits         Int               @default(20)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Product {
@@ -107,24 +107,24 @@ model Blog {
 }
 
 model LLMDotTxtConfig {
-  id      String @id @default(uuid())
-  storeId String
-  store   Store  @relation(fields: [storeId], references: [storeId])
-  llmDotTxtDescription String? @default("")
-  includeProducts Boolean @default(true)
-  includeCollections Boolean @default(true)
-  includeBlogs Boolean @default(true)
-  includePages Boolean @default(true)
-  selectAllProducts Boolean @default(true)
-  selectedProducts Boolean @default(false)
-  exceptSelectedProducts Boolean @default(false)
-  selectAllCollections Boolean @default(true)
-  selectedCollections Boolean @default(false)
+  id                        String  @id @default(uuid())
+  storeId                   String
+  store                     Store   @relation(fields: [storeId], references: [storeId])
+  llmDotTxtDescription      String? @default("")
+  includeProducts           Boolean @default(true)
+  includeCollections        Boolean @default(true)
+  includeBlogs              Boolean @default(true)
+  includePages              Boolean @default(true)
+  selectAllProducts         Boolean @default(true)
+  selectedProducts          Boolean @default(false)
+  exceptSelectedProducts    Boolean @default(false)
+  selectAllCollections      Boolean @default(true)
+  selectedCollections       Boolean @default(false)
   exceptSelectedCollections Boolean @default(false)
-  selectChatGPT Boolean @default(true)
-  selectGemini Boolean @default(true)
-  selectGrok Boolean @default(true)
-  selectDeepSeek Boolean @default(true)
-  selectClaude Boolean @default(true)
-  selectPerplexity Boolean @default(true)
+  selectChatGPT             Boolean @default(true)
+  selectGemini              Boolean @default(true)
+  selectGrok                Boolean @default(true)
+  selectDeepSeek            Boolean @default(true)
+  selectClaude              Boolean @default(true)
+  selectPerplexity          Boolean @default(true)
 }

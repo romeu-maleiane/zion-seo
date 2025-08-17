@@ -26,6 +26,10 @@ api_version = "2025-04"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
+  [[webhooks.subscriptions]]
+  topics = ["APP_SUBSCRIPTIONS_UPDATE"]
+  uri = "/webhooks/app/subscriptions_update"
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,read_products,read_content,write_app_proxy,write_online_store_navigation,read_online_store_navigation,"
