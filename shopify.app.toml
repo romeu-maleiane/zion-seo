@@ -3,7 +3,7 @@
 client_id = "db08c9d16e52101fd52ec34b8de1321b"
 name = "ZionSEO"
 handle = "zionseo"
-application_url = "https://arkansas-emacs-two-briefs.trycloudflare.com"
+application_url = "https://know-anticipated-helena-legislation.trycloudflare.com"
 embedded = true
 
 [build]
@@ -11,7 +11,7 @@ include_config_on_deploy = true
 automatically_update_urls_on_dev = true
 
 [app_proxy]
-url = "https://arkansas-emacs-two-briefs.trycloudflare.com/app/api/proxy"
+url = "https://know-anticipated-helena-legislation.trycloudflare.com/app/api/proxy"
 subpath = "llms-txt"
 prefix = "a"
 
@@ -27,7 +27,7 @@ api_version = "2025-04"
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  topics = ["APP_SUBSCRIPTIONS_UPDATE"]
+  topics = ["app_subscriptions/update"]
   uri = "/webhooks/app/subscriptions_update"
 
 [access_scopes]
@@ -35,7 +35,7 @@ api_version = "2025-04"
 scopes = "write_products,read_products,read_content,write_app_proxy,write_online_store_navigation,read_online_store_navigation,"
 
 [auth]
-redirect_urls = ["https://arkansas-emacs-two-briefs.trycloudflare.com/auth/callback", "https://arkansas-emacs-two-briefs.trycloudflare.com/auth/shopify/callback", "https://arkansas-emacs-two-briefs.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://know-anticipated-helena-legislation.trycloudflare.com/auth/callback", "https://know-anticipated-helena-legislation.trycloudflare.com/auth/shopify/callback", "https://know-anticipated-helena-legislation.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false

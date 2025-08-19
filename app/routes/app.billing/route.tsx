@@ -1,12 +1,21 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { authenticate, } from "app/shopify.server";
-import prisma from "app/db.server";
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import { useLoaderData, useNavigation } from "@remix-run/react";
-import { Card, InlineGrid, Layout, Page } from "@shopify/polaris";
+import { Badge, BlockStack, Box, Card, Text, InlineGrid, InlineStack, Layout, Page, Icon, Button, Banner } from "@shopify/polaris";
+import {
+    CheckCircleIcon
+} from '@shopify/polaris-icons';
+import prisma from "app/db.server";
 import SkeletonTablePage from "app/Components/skeletonTablePage";
 import Footer from "app/Components/footer.component";
+import '../../styles/billingStyle.css'
+import { useEffect, useState } from "react";
 
+type DataType = {
+    activePlan: string
+    aiCredits: number
+}
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
     const { admin } = await authenticate.admin(request);
@@ -54,10 +63,10 @@ const plans = [
             "Optimize up to 100 products",
             "Generate up to 1,800 AI credits",
             "Automatic keywords suggestions",
+            "LLMs.txt generator for AI indexing",
             "Email support",
-            "LLMs.txt generator for AI indexing"
         ],
-        url: "/app/api/upgrade/starter"
+        url: "/app/upgrade/starter"
     },
     {
         name: "Pro",
@@ -70,18 +79,24 @@ const plans = [
             "Optimize up to 250 products",
             "Generate up to 4,500 AI credits",
             "Automatic keywords suggestions",
+            "LLMs.txt generator for AI indexing",
             "Priority email support",
-            "LLMs.txt generator for AI indexing"
         ],
-        url: "/app/api/upgrade/pro"
+        url: "/app/upgrade/pro"
     }
 ];
 
 
-export const BillingPage = async () => {
-    const data = useLoaderData()
+function BillingPage() {
+    const data: DataType = useLoaderData()
+    const [activePlan, setActivePlan] = useState<string>('')
     const navigation = useNavigation()
     const isLoading = navigation.state === 'loading'
+
+    useEffect(() => {
+        setActivePlan(data.activePlan)
+    }, [data.activePlan])
+
     return isLoading ? (
         <SkeletonTablePage />
     ) : (
@@ -91,16 +106,94 @@ export const BillingPage = async () => {
         >
             <Layout>
                 <Layout.Section>
-                    <Card>
-                        
-                    </Card>
-                    <InlineGrid gap="400" columns={2}>
+                    {activePlan === 'free' ? (
+                        <Box paddingBlockEnd='300'>
+                            <Banner tone='info'>
+                                <p>
+                                    You're on the FREE plan. Choose a plan that fits you and upgrade.
+                                </p>
+                            </Banner>
+                        </Box>
+                    ) : null}
 
+                    {/* Plans */}
+                    <InlineGrid gap="800" columns={2}>
+                        {plans.map((plan, i) => (
+                            <Card key={i}>
+                                <InlineStack align='end'>
+                                    {activePlan === plan.name.toLowerCase() ?
+                                        <Box>
+                                            <Badge tone='success' size='large'>
+                                                Current Plan
+                                            </Badge>
+                                        </Box>
+                                        :
+                                        <Box paddingBlockEnd='600'>
+
+                                        </Box>
+                                    }
+                                </InlineStack>
+
+                                <Box>
+                                    <BlockStack >
+                                        <Text as='h2' variant='headingXl' fontWeight='bold'>
+                                            {plan.name}
+                                        </Text>
+
+                                        <Text as='p' variant='bodyLg'>
+                                            {plan.description}
+                                        </Text>
+                                    </BlockStack>
+                                </Box>
+
+                                <Box paddingBlockStart='800' paddingBlockEnd='200'>
+                                    <BlockStack >
+                                        <InlineStack blockAlign='end' gap='100'>
+                                            <Text as='h3' variant='heading2xl' fontWeight='bold'>
+                                                ${plan.price}
+                                            </Text>
+
+                                            <Text as='h3' variant='headingLg' fontWeight='medium' textDecorationLine="line-through">
+                                                ${plan.oldPrice}
+                                            </Text>
+                                        </InlineStack>
+
+                                        <Text as='p' variant='bodyLg'>
+                                            Billed Monthly
+                                        </Text>
+                                    </BlockStack>
+                                </Box>
+
+                                <Card background='bg-surface-hover'>
+                                    <BlockStack gap='100'>
+                                        {plan.features.map((feature, index) => (
+                                            <InlineStack key={index} gap='100'>
+                                                <div style={{ width: 20, height: 20 }}>
+                                                    <Icon
+                                                        source={CheckCircleIcon}
+                                                        tone="info"
+                                                    />
+                                                </div>
+                                                <Text as='p' variant='bodyLg'>
+                                                    {feature}
+                                                </Text>
+                                            </InlineStack>
+                                        ))}
+                                    </BlockStack>
+                                </Card>
+
+                                <Box paddingBlockStart='800'>
+                                    <Button url={`${plan.url}`} variant='primary' fullWidth disabled={activePlan === plan.name.toLowerCase()}>
+                                        Upgrade
+                                    </Button>
+                                </Box>
+                            </Card>
+                        ))}
                     </InlineGrid>
                 </Layout.Section>
 
                 <Layout.Section>
-                    <InlineGrid>
+                    <InlineGrid columns={{ sm: 1, md: 3, }}>
 
                     </InlineGrid>
                 </Layout.Section>
@@ -112,3 +205,5 @@ export const BillingPage = async () => {
         </Page>
     )
 }
+
+export default BillingPage

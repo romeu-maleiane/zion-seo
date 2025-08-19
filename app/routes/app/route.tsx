@@ -33,6 +33,9 @@ export default function App() {
         <Link to="/app/llms-dot-txt-generator" rel="Products">
           LLMs.txt Generator
         </Link>
+        <Link to="/app/billing" rel="Products">
+          Billing
+        </Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
