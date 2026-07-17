@@ -95,15 +95,18 @@ export async function scheduleCancellation(
   subscription: { id: string; currentPeriodEnd?: string | Date | null },
   options: { force?: boolean } = {},
 ) {
-  const currentPeriodEnd = validFuturePeriodEnd(subscription.currentPeriodEnd);
-  if (!currentPeriodEnd) throw new Error("Shopify did not provide a future subscription end date");
-
   const store = await prisma.store.findUnique({
     where: { storeId },
-    select: { shopifySubscriptionId: true },
+    select: { shopifySubscriptionId: true, creditCycleEndsAt: true },
   });
   // Ignore a delayed cancellation event for a subscription already replaced by a new one.
   if (!options.force && store?.shopifySubscriptionId && store.shopifySubscriptionId !== subscription.id) return false;
+
+  // Shopify's cancellation webhook can omit current_period_end. The direct
+  // cancellation route already saved it; retain that local date when available.
+  const currentPeriodEnd = validFuturePeriodEnd(subscription.currentPeriodEnd)
+    ?? validFuturePeriodEnd(store?.creditCycleEndsAt);
+  if (!currentPeriodEnd) return false;
 
   await prisma.store.update({
     where: { storeId },
