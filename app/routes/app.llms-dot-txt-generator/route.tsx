@@ -3,7 +3,7 @@ import { BlockStack, Card, Text, Layout, Page, Box, Checkbox, Divider, RadioButt
 import Footer from 'app/Components/footer.component'
 import { useCallback, useEffect, useState } from 'react'
 import prisma from "app/db.server";
-import { authenticate } from 'app/shopify.server'
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server"
 import { useLoaderData, useNavigation } from '@remix-run/react'
 import SkeletonTablePage from 'app/Components/skeletonTablePage'
 import { fetchPostLlmsDotTxt } from 'app/utils/fetchPostLlmsDotTxt.client'
@@ -60,7 +60,7 @@ type ResourceType = {
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-    const { admin } = await authenticate.admin(request);
+    const { admin } = await authenticateAdminShop(request);
 
     try {
         const shop = await admin.graphql(
@@ -395,7 +395,7 @@ function LlmsDotTxtPage() {
     ) : (
         <Page
             title='LLMs.txt Generator'
-            subtitle='Generate Your LLMs.txt File in Seconds — Stay Visible to AI Crawlers'
+            subtitle='Generate Your LLMs.txt File in Seconds Ã¢â‚¬â€ Stay Visible to AI Crawlers'
             backAction={{ content: 'Dashboard', url: '/app' }}
             secondaryActions={<Button disabled={data.featureBlocked} external={true} url={`https://${data.shopDomain}/llms.txt`} >View LLMs.txt</Button>}
             primaryAction={<Button disabled={data.featureBlocked} onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}

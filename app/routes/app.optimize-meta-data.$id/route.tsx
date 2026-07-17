@@ -5,7 +5,7 @@ import {
 import "../../styles/customStyle.css";
 import { GraphqlQueryError } from "@shopify/shopify-api";
 import type { LoaderFunctionArgs, } from "@remix-run/node";
-import { authenticate } from "app/shopify.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 import prisma from "app/db.server";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { useCallback, useEffect, useState } from 'react';
@@ -39,7 +39,7 @@ type Data = {
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { id } = params
   const completProductId = ('gid://shopify/Product/').concat('', id || '')
-  const { admin } = await authenticate.admin(request);
+  const { admin } = await authenticateAdminShop(request);
 
   try {
     const shop = await admin.graphql(

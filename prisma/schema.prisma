@@ -48,6 +48,8 @@ model Store {
   aiCredits         Int               @default(20)
   creditCycleEndsAt  DateTime?
   cancellationAt     DateTime?
+  shopifySubscriptionId String?
+  subscriptionStatus String @default("none")
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }

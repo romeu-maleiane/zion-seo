@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { TextBlockIcon } from '@shopify/polaris-icons';
 import type { IndexFiltersProps } from '@shopify/polaris';
 import { GraphqlQueryError } from "@shopify/shopify-api";
-import { authenticate } from "app/shopify.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 import prisma from "app/db.server";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { formatDate } from "app/utils/formateDate";
@@ -47,7 +47,7 @@ interface handleGetNextProductsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-    const { admin } = await authenticate.admin(request);
+    const { admin } = await authenticateAdminShop(request);
 
     try {
         const shop = await admin.graphql(
@@ -273,13 +273,13 @@ function MetaDataOptimizerPage() {
                                 dataPrimaryLink
                                 url={`/app/generate-product-description/${productId.replace('gid://shopify/Product/', '')}`}
                             >
-                                {title || '—'}
+                                {title || 'Ã¢â‚¬â€'}
                             </Link>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <div style={{ width: '250px' }}>
                                 <Text as='p' truncate>
-                                    {currentDescription || '—'}
+                                    {currentDescription || 'Ã¢â‚¬â€'}
                                 </Text>
                             </div>
                         </IndexTable.Cell>

@@ -19,7 +19,6 @@ import {
   BLOGS_QUERY,
   PAGES_QUERY,
 } from "app/utils/graphqlQuerysAndMutations";
-import { authenticate } from "../../shopify.server";
 import Footer from "app/Components/footer.component";
 import { createOrUpdateShop } from "app/models/createOrUpdateShop.server"
 import { GraphqlQueryError } from '@shopify/shopify-api';
@@ -28,6 +27,7 @@ import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server"
 import CardAiSeoOptimizer from "app/Components/cardAiSeoOptimizer";
 import { getShopMetrics } from "app/models/getShoMetrics.server";
 import { reconcileCreditCycle } from "app/models/creditLifecycle.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import prisma from "app/db.server";
 import SkeletonTablePage from "app/Components/skeletonTablePage";
@@ -51,7 +51,7 @@ type Data = {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin } = await authenticateAdminShop(request);
 
   try {
     const shop = await admin.graphql(SHOP_INFO_QUERY);
