@@ -27,6 +27,7 @@ import StoreInformationComponent from "app/Components/storeInformation.component
 import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server";
 import CardAiSeoOptimizer from "app/Components/cardAiSeoOptimizer";
 import { getShopMetrics } from "app/models/getShoMetrics.server";
+import { reconcileCreditCycle } from "app/models/creditLifecycle.server";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import prisma from "app/db.server";
 import SkeletonTablePage from "app/Components/skeletonTablePage";
@@ -68,11 +69,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       domain: shopDomain
     }).then(response => response.json())
 
+    await reconcileCreditCycle(shopId);
+    const storeBalance = await prisma.store.findUnique({
+      where: { storeId: shopId },
+      select: { activePlan: true, aiCredits: true },
+    });
+    const activePlan = storeBalance?.activePlan || createdOrUpdatedStore.activePlan;
+
     let products;
 
-    if (createdOrUpdatedStore.activePlan === 'free') {
+    if (activePlan === 'free') {
       products = await admin.graphql(PRODUCTS_QUERY_FREE);
-    } else if (createdOrUpdatedStore.activePlan === 'starter') {
+    } else if (activePlan === 'starter') {
       products = await admin.graphql(PRODUCTS_QUERY_STARTER);
     } else {
       products = await admin.graphql(PRODUCTS_QUERY_PRO);
@@ -111,7 +119,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       noDataOfMetaDataYet,
     } = await getShopMetrics({ shopId: shopData.data.shop.id })
 
-    const storeBalance = await prisma.store.findUnique({
+    const latestStoreBalance = await prisma.store.findUnique({
       where: { storeId: shopData.data.shop.id },
       select: {
         activePlan: true,
@@ -130,8 +138,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       noDataOfOptimizedProductsYet,
       noDataOfDescriptionsYet,
       noDataOfMetaDataYet,
-      activePlan: storeBalance?.activePlan,
-      aiCredits: storeBalance?.aiCredits
+      activePlan: latestStoreBalance?.activePlan,
+      aiCredits: latestStoreBalance?.aiCredits
     }, { status: 200 });
 
   } catch (error) {

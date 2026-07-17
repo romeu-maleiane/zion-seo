@@ -1,11 +1,7 @@
 import prisma from "app/db.server";
+import { PLAN_CREDITS } from "app/constants/planCredits";
 
-export const PLAN_CREDITS = {
-  starter: 1800,
-  pro: 4500,
-} as const;
-
-export type PaidPlan = keyof typeof PLAN_CREDITS;
+export type PaidPlan = Exclude<keyof typeof PLAN_CREDITS, "free">;
 
 function nextCycleEnd(from: Date) {
   const next = new Date(from);
@@ -21,39 +17,40 @@ export function planFromSubscription(name: string): PaidPlan | null {
 
 export async function startCreditCycle(storeId: string, plan: PaidPlan) {
   const now = new Date();
-  const creditCycleEndsAt = nextCycleEnd(now);
-
   return prisma.store.update({
     where: { storeId },
     data: {
       activePlan: plan,
       aiCredits: PLAN_CREDITS[plan],
-      creditCycleEndsAt,
+      creditCycleEndsAt: nextCycleEnd(now),
       cancellationAt: null,
     },
   });
 }
 
-/**
- * Enforces monthly credit resets without rollover. It is safe to call on every
- * authenticated request and turns a cancelled plan into free only at cycle end.
- */
 export async function reconcileCreditCycle(storeId: string) {
   return prisma.$transaction(async (tx) => {
     const store = await tx.store.findUnique({
       where: { storeId },
       select: { activePlan: true, creditCycleEndsAt: true, cancellationAt: true },
     });
-    if (!store || (store.activePlan !== "starter" && store.activePlan !== "pro")) return store;
+    if (!store) return store;
+
+    if (store.activePlan === "free") {
+      return tx.store.update({
+        where: { storeId },
+        data: { aiCredits: PLAN_CREDITS.free },
+      });
+    }
+    if (store.activePlan !== "starter" && store.activePlan !== "pro") return store;
 
     const now = new Date();
-    if (!store.creditCycleEndsAt) return store;
-    if (store.creditCycleEndsAt > now) return store;
+    if (!store.creditCycleEndsAt || store.creditCycleEndsAt > now) return store;
 
     if (store.cancellationAt) {
       return tx.store.update({
         where: { storeId },
-        data: { activePlan: "free", aiCredits: 20, creditCycleEndsAt: null, cancellationAt: null },
+        data: { activePlan: "free", aiCredits: PLAN_CREDITS.free, creditCycleEndsAt: null, cancellationAt: null },
       });
     }
 
@@ -77,7 +74,7 @@ export async function scheduleCancellation(storeId: string) {
   if (!store.creditCycleEndsAt || store.creditCycleEndsAt <= new Date()) {
     await prisma.store.update({
       where: { storeId },
-      data: { activePlan: "free", aiCredits: 20, creditCycleEndsAt: null, cancellationAt: null },
+      data: { activePlan: "free", aiCredits: PLAN_CREDITS.free, creditCycleEndsAt: null, cancellationAt: null },
     });
     return;
   }

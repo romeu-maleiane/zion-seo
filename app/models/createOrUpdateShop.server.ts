@@ -1,4 +1,5 @@
-import  prisma  from '../db.server'
+import prisma from '../db.server'
+import { PLAN_CREDITS } from "app/constants/planCredits"
 
 interface CreateOrUpdateShopType {
     id: string
@@ -17,7 +18,7 @@ export const createOrUpdateShop = async ({id, name, domain, email, }: CreateOrUp
       email: email,
       storeDomain: domain,
       activePlan: 'free',
-      aiCredits: 50
+      aiCredits: PLAN_CREDITS.free
     },
     update: {
       storeName: name,
