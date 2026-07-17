@@ -12,7 +12,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         plans: [newPlan],
         onFailure: async () => billing.request({
             plan: newPlan,
-            isTest: true,
+            isTest: process.env.NODE_ENV !== "production",
             returnUrl: `https://admin.shopify.com/store/${shopName}/apps/zionseo/app/billing`,
         }),
     });

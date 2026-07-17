@@ -30,7 +30,6 @@ type Data = {
     currentDescription: string;
     createdAt: Date | string;
   }
-  shopId: string;
   aiCredits: number | null;
   suggestedKeywordsFromData: string[]
 }
@@ -111,7 +110,7 @@ function OptimizeProductDescriptionPage() {
   const isLoading = navigation.state === 'loading'
   const [loadingFetchGeneratedDescriptions, setLoadingFetchGeneratedDescriptions] = useState<boolean>(false)
   const [loadingUpdateProductDescription, setLoadingUpdateProductDescription] = useState<boolean>(false)
-  const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
+  const { productData, aiCredits, suggestedKeywordsFromData } = data
 
   const [descriptions, setDescriptions] = useState([
     {
@@ -261,7 +260,7 @@ function OptimizeProductDescriptionPage() {
 
       if (!generatedDescriptions) throw new Error("An error occured fetching generated descriptions");
 
-      const newAiCredits = await updateAiCredits({ shopId, aiCredits: credits || 0, creditsToBeSubtracted: costPerUsage })
+      const newAiCredits = await updateAiCredits({ creditsToBeSubtracted: costPerUsage })
       if (!newAiCredits) throw new Error("An error occured updating aiCredits");
 
       handleAddCreativeDescriptions({ creative1: generatedDescriptions.descriptionOne, creative2: generatedDescriptions.descriptionTwo })
@@ -274,7 +273,7 @@ function OptimizeProductDescriptionPage() {
       setLoadingFetchGeneratedDescriptions(false)
       shopify.toast.show('Server Error!', { duration: 5000, isError: true })
     }
-  }, [brand, credits, handleAddCreativeDescriptions, keyWords, productData.title, productDetails, shopId])
+  }, [brand, credits, handleAddCreativeDescriptions, keyWords, productData.title, productDetails])
 
 
   const handleUpdateProduct = useCallback(async () => {

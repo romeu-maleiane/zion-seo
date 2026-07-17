@@ -1,4 +1,4 @@
-import { BlockStack, Text, Button, Card, InlineStack, ProgressBar, Box } from '@shopify/polaris';
+import { BlockStack, Text, Button, Card, InlineStack, ProgressBar, } from '@shopify/polaris';
 
 
 interface CardAiSeoOptimizerType {
@@ -8,10 +8,6 @@ interface CardAiSeoOptimizerType {
 
 
 function CardAiSeoOptimizer({ activePlan, aiCredits }: CardAiSeoOptimizerType ) {
-    // const data: Data = useLoaderData()
-
-    // console.log('CardAiSeoOptimizer Data : ', data)
-    // let { activePlan, aiCredits  } = data;
     aiCredits = aiCredits || 0
     const usedCredits = activePlan === 'free' ? 20 - aiCredits : 3000 - aiCredits
 

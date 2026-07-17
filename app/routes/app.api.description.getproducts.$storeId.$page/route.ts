@@ -1,10 +1,12 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import prisma from "app/db.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
-    const { storeId, page } = params
-    const completedStoreId = ('gid://shopify/Shop/').concat('', storeId || '')
+    const { page } = params
+        const { shopId } = await authenticateAdminShop(request)
+    const completedStoreId = shopId
     const pageSize = 15
 
     const url = new URL(request.url);

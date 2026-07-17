@@ -1,12 +1,13 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import prisma from "app/db.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 
 
 export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     try {
 
-        const { storeId } = params
-        const completedStoreId = ('gid://shopify/Shop/').concat('', storeId || '')
+        const { shopId } = await authenticateAdminShop(request)
+        const completedStoreId = shopId
 
         const url = new URL(request.url);
         const search = url.searchParams.get("search") || undefined;

@@ -32,7 +32,6 @@ type Data = {
     currentMetaDescription: string;
     createdAt: Date | string;
   }
-  shopId: string;
   aiCredits: number | null;
   suggestedKeywordsFromData: string[]
 }
@@ -118,7 +117,7 @@ function OptimizeMetaDataPage() {
   const isLoading = navigation.state === 'loading'
   const [loadingOptimizedMetaData, setLoadingOptimizedMetaData] = useState<boolean>(false)
   const [loadingUpdateProductMetaData, setLoadingUpdateProductMetaData] = useState<boolean>(false)
-  const { shopId, productData, aiCredits, suggestedKeywordsFromData } = data
+  const { productData, aiCredits, suggestedKeywordsFromData } = data
 
 
   useEffect(() => {
@@ -189,7 +188,7 @@ function OptimizeMetaDataPage() {
 
       if (!optimizedMetaData) throw new Error("An error occured fetching optimized meta data");
 
-      const newAiCredits = await updateAiCredits({ shopId, aiCredits: credits || 0, creditsToBeSubtracted: costPerUsage })
+      const newAiCredits = await updateAiCredits({ creditsToBeSubtracted: costPerUsage })
       if (!newAiCredits) throw new Error("An error occured updating aiCredits");
 
       setOptimizedMetaTitle(optimizedMetaData.optimizedMetaTitle)
@@ -205,7 +204,7 @@ function OptimizeMetaDataPage() {
       setLoadingOptimizedMetaData(false)
       shopify.toast.show('Server Error!', { duration: 5000, isError: true })
     }
-  }, [credits, keyWords, productData.currentMetaDescription, productData.currentMetaTitle, productData.title, shopId])
+  }, [credits, keyWords, productData.currentMetaDescription, productData.currentMetaTitle, productData.title])
 
   const handleChoseOptimizedMetaTitle = useCallback(() => {
     setMetaTitle(optimizedMetaTitle)

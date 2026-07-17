@@ -33,7 +33,7 @@ function AiFeature({title, subTitle, aiCredits, action, loading}: AiFeatureProps
                     </Box>
                     <InlineStack align='space-between'>
                         <Text as='span'>{aiCredits} Credits available</Text>
-                        <Link removeUnderline url='sasa'>Buy Credits</Link>
+                        <Link removeUnderline url='/app/billing'>Buy Credits</Link>
                     </InlineStack>
                 </BlockStack>
             </Card>

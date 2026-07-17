@@ -1,11 +1,12 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { authenticate } from "app/shopify.server";
+import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
 import { updatedProductDescription } from "app/models/updateDescription.server"
 import { GraphqlQueryError } from "@shopify/shopify-api";
+import prisma from "app/db.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     try {
-        const { admin } = await authenticate.admin(request);
+        const { admin, shopId } = await authenticateAdminShop(request);
         const formData = await request.formData()
 
         const productId = formData.get('productId')
@@ -13,6 +14,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         if ((typeof productId) !== 'string' || !productId) throw new Error("Missing or invalid productId");
         if ((typeof newProductDescription) !== 'string' || !newProductDescription) throw new Error("Missing or invalid newProductDescription");
+
+        const ownedProduct = await prisma.product.findFirst({ where: { productId, storeId: shopId }, select: { id: true } })
+        if (!ownedProduct) return Response.json({ message: 'Product not found' }, { status: 404 })
 
         const response = await admin.graphql(
             `#graphql

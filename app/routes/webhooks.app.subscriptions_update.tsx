@@ -1,33 +1,21 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
-import db from "../db.server";
+import { planFromSubscription, reconcileCreditCycle, scheduleCancellation, startCreditCycle } from "app/models/creditLifecycle.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-    const { payload, admin } = await authenticate.webhook(request);
+  const { payload } = await authenticate.webhook(request);
+  const subscription = payload.app_subscription;
+  const shopId = subscription.admin_graphql_api_shop_id;
+  const plan = planFromSubscription(subscription.name);
 
-    if(!admin) return new Response()
-        
-    const shopData = await admin.graphql(
-        `#graphql
-            query shopInfo {
-                shop {
-                    id
-                }
-            }
-        `,
-    );
-    const shopId = await shopData.json().then(res => res.data.shop.id)
-
-    const status = payload.app_subscription.status
-    if (status !== 'ACTIVE') {
-        await db.store.update({   
-            where: {
-                storeId: shopId
-            },
-            data: {
-                activePlan: 'free',
-            },
-        });
+  if (subscription.status === "ACTIVE" && plan) {
+    const store = await reconcileCreditCycle(shopId);
+    if (!store || store.activePlan !== plan || store.cancellationAt || !store.creditCycleEndsAt) {
+      await startCreditCycle(shopId, plan);
     }
-    return new Response();
+  } else if (subscription.status === "CANCELLED" || subscription.status === "EXPIRED") {
+    await scheduleCancellation(shopId);
+  }
+
+  return new Response();
 };

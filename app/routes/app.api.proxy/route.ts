@@ -1,33 +1,29 @@
-import type { LoaderFunctionArgs } from "@remix-run/node"
-import { getLlmsDotTxtData } from "app/models/getLlmsDotTxtData.server"
-import { generateLlmsDotTxt } from "app/utils/generateLlmsDotTxt"
-
+import type { LoaderFunctionArgs } from "@remix-run/node";
+import { authenticate } from "app/shopify.server";
+import { getLlmsDotTxtData } from "app/models/getLlmsDotTxtData.server";
+import { generateLlmsDotTxt } from "app/utils/generateLlmsDotTxt";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-    try {
-        const shopDomain = request.headers.get('x-shop-domain')
+  try {
+    const { admin } = await authenticate.public.appProxy(request);
+    if (!admin) return new Response("App proxy session not found", { status: 401 });
 
-        if (!shopDomain) {
-            throw new Error("Missing 'shop' query parameter")
-        }
+    const shopResponse = await admin.graphql(`#graphql
+      query AppProxyShop { shop { id } }
+    `);
+    const shopResult = await shopResponse.json();
+    const storeId = shopResult.data?.shop?.id;
+    if (typeof storeId !== "string") return new Response("Shop not found", { status: 404 });
 
-        const data = await getLlmsDotTxtData({ storeDomain: shopDomain})
+    const data = await getLlmsDotTxtData({ storeId });
+    if (!data) return new Response("LLMs.txt is not configured", { status: 404 });
 
-        if (!data) {
-            throw new Error("No data found for the given shop domain")
-        }
-
-        const llmsDotTxt = generateLlmsDotTxt({ data: data })
-        
-        return Response.json(llmsDotTxt, { 
-            status: 200,
-            headers: { "Content-Type": "text/plain", }
-         })
-    } catch (error) {
-        console.error('Proxy Send LLMs.txt Error: ',error)
-        return Response.json('Something went wrong generating llms.txt', { 
-            status: 500,
-            headers: { "Content-Type": "text/plain", } 
-        })
-    }
-}
+    return new Response(generateLlmsDotTxt({ data }), {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=300" },
+    });
+  } catch (error) {
+    console.error("Proxy Send LLMs.txt Error: ", error);
+    return new Response("Unable to generate llms.txt", { status: 500 });
+  }
+};

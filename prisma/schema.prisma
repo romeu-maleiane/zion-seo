@@ -46,6 +46,8 @@ model Store {
   urlRedirectLlmsId String?
   activePlan        String            @default("free")
   aiCredits         Int               @default(20)
+  creditCycleEndsAt  DateTime?
+  cancellationAt     DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }
