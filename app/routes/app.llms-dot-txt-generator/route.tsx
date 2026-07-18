@@ -397,7 +397,7 @@ function LlmsDotTxtPage() {
             title='LLMs.txt Generator'
             subtitle='Generate Your LLMs.txt File in Seconds and Stay Visible to AI Crawlers'
             backAction={{ content: 'Dashboard', url: '/app' }}
-            secondaryActions={<Button disabled={data.featureBlocked} external={true} url={`https://${data.shopDomain}/llms.txt`} >View LLMs.txt</Button>}
+            secondaryActions={<Button disabled={data.featureBlocked} onClick={() => window.open(`https://${data.shopDomain}/llms.txt`, "_blank", "noopener,noreferrer")}>View LLMs.txt</Button>}
             primaryAction={<Button disabled={data.featureBlocked} onClick={handleSaveLLMsDotTxtData} loading={isPostingLlmsDotTxt} variant="primary">save</Button>}
         >
             <Layout>
