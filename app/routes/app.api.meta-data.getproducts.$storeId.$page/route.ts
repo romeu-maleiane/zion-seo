@@ -22,6 +22,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
         result = await prisma.product.findMany({
             skip: parseInt(page || '1') * pageSize,
             take: pageSize + 1,
+            orderBy: [{ createdAt: "desc" }, { productId: "asc" }],
             where: {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined,
@@ -45,6 +46,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
         result = await prisma.product.findMany({
             skip: parseInt(page || '1') * pageSize,
             take: pageSize + 1,
+            orderBy: [{ createdAt: "desc" }, { productId: "asc" }],
             where: {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined,
@@ -69,6 +71,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
         result = await prisma.product.findMany({
             skip: parseInt(page || '1') * pageSize,
             take: pageSize + 1,
+            orderBy: [{ createdAt: "desc" }, { productId: "asc" }],
             where: {
                 storeId: completedStoreId,
                 title: search ? { search } : undefined

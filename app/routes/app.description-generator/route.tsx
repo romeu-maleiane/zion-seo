@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs, } from "@remix-run/node";
 import { Badge, ChoiceList, Frame, Icon, Text, IndexFilters, IndexTable, InlineStack, Layout, Link, Page, Thumbnail, useBreakpoints, useSetIndexFiltersMode } from '@shopify/polaris'
 import CardAiSeoOptimizer from 'app/Components/cardAiSeoOptimizer'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { TextBlockIcon } from '@shopify/polaris-icons';
 import type { IndexFiltersProps } from '@shopify/polaris';
 import { GraphqlQueryError } from "@shopify/shopify-api";
@@ -47,37 +47,25 @@ interface handleGetNextProductsType {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-    const { admin } = await authenticateAdminShop(request);
+    const { shopId } = await authenticateAdminShop(request);
 
     try {
-        const shop = await admin.graphql(
-            `#graphql
-            query shopInfo {
-                shop {
-                    id
-                }
-            }`,
-        );
-
-        const shopData = await shop.json()
-
         const productsData = await prisma.product.findMany({
             take: 15,
-            where: { storeId: shopData.data.shop.id },
+            orderBy: [{ createdAt: "desc" }, { productId: "asc" }],
+            where: { storeId: shopId },
             select: {
                 productId: true,
                 productImage: true,
                 title: true,
-                currentMetaTitle: true,
-                currentMetaDescription: true,
+                currentDescription: true,
                 generatedDescription: true,
-                generatedMetaTitle: true,
                 createdAt: true,
             }
         })
 
         const storeBalance = await prisma.store.findUnique({
-            where: { storeId: shopData.data.shop.id },
+            where: { storeId: shopId },
             select: {
                 activePlan: true,
                 aiCredits: true,
@@ -85,7 +73,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         })
 
 
-        return Response.json({ productsData, storeId: shopData.data.shop.id, activePlan: storeBalance?.activePlan, aiCredits: storeBalance?.aiCredits }, { status: 200 })
+        return Response.json({ productsData, storeId: shopId, activePlan: storeBalance?.activePlan, aiCredits: storeBalance?.aiCredits }, { status: 200 })
     } catch (error) {
         if (error instanceof GraphqlQueryError) {
             console.error('Meta Data Optimizer Graphql Error: ', error.body?.errors)
@@ -101,6 +89,8 @@ function MetaDataOptimizerPage() {
     const data: Data = useLoaderData();
     const { productsData, activePlan, aiCredits } = data;
     const [products, setProducts] = useState<Array<Product>>(productsData)
+    const requestId = useRef(0)
+    const hasLoadedInitialProducts = useRef(false)
     const [page, setPage] = useState<number>(0)
     const [hasNextPage, setHasNextPage] = useState<boolean>(products.length === 15)
     const [loading, setLoading] = useState<boolean>(false)
@@ -109,7 +99,6 @@ function MetaDataOptimizerPage() {
     const [searchLoading, setSearchLoading] = useState<boolean>(false)
     const [onlyOptimizedProducts, setOnlyOptimizedProducts] = useState<boolean>(false)
     const [onlyNotOptimizedProducts, setOnlyNotOptimizedProducts] = useState<boolean>(false)
-    const [rowMarkup, setRowMarkup] = useState<Array<JSX.Element> | null>(null)
     const { mode, setMode } = useSetIndexFiltersMode();
     const onHandleCancel = () => {
         setQueryValue('')
@@ -196,30 +185,29 @@ function MetaDataOptimizerPage() {
         });
     }
 
-    const handleGetNextProducts = useCallback(async ({ nextPage, query = '', onlyNotOptimizedProducts = false, onlyOptimizedProducts = false }: handleGetNextProductsType) => {
+    const handleGetNextProducts = useCallback(async ({ nextPage, query = "", onlyNotOptimizedProducts = false, onlyOptimizedProducts = false }: handleGetNextProductsType) => {
+        const currentRequest = ++requestId.current;
+        setLoading(true);
         try {
-            setLoading(true)
-
-            const params = new URLSearchParams()
-            if (query) params.append('search', query)
-            if (onlyNotOptimizedProducts) params.append('onlyNotOptimizedProducts', 'true')
-            if (onlyOptimizedProducts) params.append('onlyOptimizedProducts', 'true')
-
-            const storeId = data.storeId.replace('gid://shopify/Shop/', '');
-            const result = await fetch(`/app/api/description/getproducts/${storeId}/${nextPage}?${params.toString()}`)
-
-            const fetchData = await result.json()
-
-            setHasNextPage(fetchData?.hasNextPage)
-            setProducts(fetchData?.products)
-            setLoading(false)
+            const params = new URLSearchParams();
+            if (query) params.append("search", query);
+            if (onlyNotOptimizedProducts) params.append("onlyNotOptimizedProducts", "true");
+            if (onlyOptimizedProducts) params.append("onlyOptimizedProducts", "true");
+            const storeId = data.storeId.replace("gid://shopify/Shop/", "");
+            const result = await fetch("/app/api/description/getproducts/" + storeId + "/" + nextPage + "?" + params.toString());
+            if (!result.ok) throw new Error("Unable to load products");
+            const fetchData = await result.json();
+            if (currentRequest !== requestId.current) return false;
+            setHasNextPage(Boolean(fetchData?.hasNextPage));
+            setProducts(fetchData?.products ?? []);
+            return true;
         } catch (error) {
-            console.error('Error fetching products:', error);
-            setLoading(false);
-            return;
-
+            if (currentRequest === requestId.current) console.error("Error fetching products:", error);
+            return false;
+        } finally {
+            if (currentRequest === requestId.current) setLoading(false);
         }
-    }, [data.storeId,])
+    }, [data.storeId]);
 
     const handleFiltersQueryChange = useCallback(
         (value: string) => {
@@ -229,24 +217,14 @@ function MetaDataOptimizerPage() {
     );
 
     useEffect(() => {
-        setPage(0)
-        setSearchLoading(true)
-        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
-        setSearchLoading(false)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedQuery])
-
-    useEffect(() => {
-        setPage(0)
-        setSearchLoading(true)
-        handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
-        setSearchLoading(false)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [onlyNotOptimizedProducts, onlyOptimizedProducts])
-
-    useEffect(() => {
-        (() => {
-            setRowMarkup(Array.from(products).map(
+        if (!hasLoadedInitialProducts.current) {
+            hasLoadedInitialProducts.current = true;
+            return;
+        }
+        setPage(0);
+        void handleGetNextProducts({ nextPage: 0, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts });
+    }, [debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts, handleGetNextProducts]);
+    const rowMarkup = useMemo(() =>Array.from(products).map(
                 (
                     { productId,
                         productImage,
@@ -306,10 +284,7 @@ function MetaDataOptimizerPage() {
                         </IndexTable.Cell>
                     </IndexTable.Row>
                 ),
-            ))
-        })()
-
-    }, [products])
+            ), [products]);
 
     return isLoading ? (
         <SkeletonFeaturePage />
@@ -358,21 +333,7 @@ function MetaDataOptimizerPage() {
                             ]}
                             pagination={{
                                 hasNext: hasNextPage,
-                                onNext: () => {
-                                    setPage(currentPage => {
-                                        const newPage = currentPage + 1
-                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
-                                        return newPage
-                                    })
-                                },
-                                hasPrevious: page !== 0,
-                                onPrevious: () => {
-                                    setPage(currentPage => {
-                                        const newPage = currentPage - 1
-                                        handleGetNextProducts({ nextPage: newPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })
-                                        return newPage
-                                    })
-                                }
+                                onNext: async () => { const nextPage = page + 1; if (await handleGetNextProducts({ nextPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })) setPage(nextPage); }, hasPrevious: page !== 0, onPrevious: async () => { const previousPage = page - 1; if (await handleGetNextProducts({ nextPage: previousPage, query: debouncedQuery, onlyNotOptimizedProducts, onlyOptimizedProducts })) setPage(previousPage); }
                             }}
                             loading={loading}
                         >
