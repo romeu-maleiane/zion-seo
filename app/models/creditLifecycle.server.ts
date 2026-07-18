@@ -56,7 +56,7 @@ export async function reconcileCreditCycle(storeId: string) {
   return prisma.$transaction(async (tx) => {
     const store = await tx.store.findUnique({
       where: { storeId },
-      select: { activePlan: true, creditCycleEndsAt: true, cancellationAt: true, subscriptionStatus: true },
+      select: { activePlan: true, aiCredits: true, creditCycleEndsAt: true, cancellationAt: true, subscriptionStatus: true },
     });
     if (!store) return store;
     if (store.activePlan === "free") {

@@ -10,30 +10,18 @@ import {
   Link,
   InlineGrid,
 } from "@shopify/polaris";
-import {
-  SHOP_INFO_QUERY,
-  PRODUCTS_QUERY_FREE,
-  PRODUCTS_QUERY_STARTER,
-  PRODUCTS_QUERY_PRO,
-  COLLECTIONS_QUERY,
-  BLOGS_QUERY,
-  PAGES_QUERY,
-} from "app/utils/graphqlQuerysAndMutations";
+import { SHOP_INFO_QUERY } from "app/utils/graphqlQuerysAndMutations";
 import Footer from "app/Components/footer.component";
 import { createOrUpdateShop } from "app/models/createOrUpdateShop.server"
 import { GraphqlQueryError } from '@shopify/shopify-api';
 import StoreInformationComponent from "app/Components/storeInformation.component";
-import { createOrUpdateProducts } from "app/models/createOrUpdateProduct.server";
 import CardAiSeoOptimizer from "app/Components/cardAiSeoOptimizer";
 import { getShopMetrics } from "app/models/getShoMetrics.server";
-import { reconcileCreditCycle } from "app/models/creditLifecycle.server";
 import { authenticateAdminShop } from "app/utils/authenticatedShop.server";
-import { useLoaderData, useNavigation } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigation } from "@remix-run/react";
 import prisma from "app/db.server";
 import SkeletonTablePage from "app/Components/skeletonTablePage";
-import { createOrUpdateCollections } from "app/models/createOrUpdateCollection.server";
-import { createOrUpdateBlogs } from "app/models/createOrUpdateBlog.server";
-import { createOrUpdatePages } from "app/models/createOrUpdate.server";
+import { useEffect } from "react";
 
 type Data = {
   countOfProducts: number;
@@ -51,61 +39,25 @@ type Data = {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticateAdminShop(request);
+  const { admin, shopId } = await authenticateAdminShop(request);
 
   try {
-    const shop = await admin.graphql(SHOP_INFO_QUERY);
-
-    const shopData = await shop.json()
-    const shopId = shopData.data.shop.id
-    const shopName = shopData.data.shop.name
-    const shopEmail = shopData.data.shop.email
-    const shopDomain = shopData.data.shop.primaryDomain.host
-
-    const { createdOrUpdatedStore } = await createOrUpdateShop({
-      id: shopId,
-      name: shopName,
-      email: shopEmail,
-      domain: shopDomain
-    }).then(response => response.json())
-
-    await reconcileCreditCycle(shopId);
-    const storeBalance = await prisma.store.findUnique({
+    let store = await prisma.store.findUnique({
       where: { storeId: shopId },
       select: { activePlan: true, aiCredits: true },
     });
-    const activePlan = storeBalance?.activePlan || createdOrUpdatedStore.activePlan;
-
-    let products;
-
-    if (activePlan === 'free') {
-      products = await admin.graphql(PRODUCTS_QUERY_FREE);
-    } else if (activePlan === 'starter') {
-      products = await admin.graphql(PRODUCTS_QUERY_STARTER);
-    } else {
-      products = await admin.graphql(PRODUCTS_QUERY_PRO);
+    if (!store) {
+      const shop = await admin.graphql(SHOP_INFO_QUERY);
+      const shopData = await shop.json();
+      const created = await createOrUpdateShop({
+        id: shopId,
+        name: shopData.data.shop.name,
+        email: shopData.data.shop.email,
+        domain: shopData.data.shop.primaryDomain.host,
+      });
+      if (!created.ok) throw new Error("Unable to create store");
+      store = await prisma.store.findUnique({ where: { storeId: shopId }, select: { activePlan: true, aiCredits: true } });
     }
-
-    const [collections, blogs, pages] = await Promise.all([
-      admin.graphql(COLLECTIONS_QUERY),
-      admin.graphql(BLOGS_QUERY),
-      admin.graphql(PAGES_QUERY),
-    ]);
-
-    const [productsData, collectionsData, blogsData, pagesData] = await Promise.all([
-      products.json(),
-      collections.json(),
-      blogs.json(),
-      pages.json(),
-    ]);
-
-    await Promise.all([
-      createOrUpdateProducts(productsData.data.products.edges, shopId),
-      createOrUpdateCollections(collectionsData.data.collections.nodes, shopDomain, shopId),
-      createOrUpdateBlogs(blogsData.data.blogs.nodes, shopDomain, shopId),
-      createOrUpdatePages(pagesData.data.pages.nodes, shopDomain, shopId),
-    ]);
-
     const {
       countOfProducts,
       countOfOptimizedProducts,
@@ -117,15 +69,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       noDataOfOptimizedProductsYet,
       noDataOfDescriptionsYet,
       noDataOfMetaDataYet,
-    } = await getShopMetrics({ shopId: shopData.data.shop.id })
-
-    const latestStoreBalance = await prisma.store.findUnique({
-      where: { storeId: shopData.data.shop.id },
-      select: {
-        activePlan: true,
-        aiCredits: true,
-      },
-    })
+    } = await getShopMetrics({ shopId })
 
     return Response.json({
       countOfProducts,
@@ -138,8 +82,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       noDataOfOptimizedProductsYet,
       noDataOfDescriptionsYet,
       noDataOfMetaDataYet,
-      activePlan: latestStoreBalance?.activePlan,
-      aiCredits: latestStoreBalance?.aiCredits
+      activePlan: store?.activePlan ?? null,
+      aiCredits: store?.aiCredits ?? null
     }, { status: 200 });
 
   } catch (error) {
@@ -155,6 +99,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Index() {
   const data: Data = useLoaderData()
+  const syncFetcher = useFetcher<{ synced?: boolean; message?: string }>();
+  useEffect(() => {
+    if (syncFetcher.data?.synced) shopify.toast.show("Catalog sync completed successfully.");
+    if (syncFetcher.data?.message) shopify.toast.show(syncFetcher.data.message, { isError: true });
+  }, [syncFetcher.data]);
+
   const navigation = useNavigation()
   const isLoading = navigation.state === 'loading'
 
@@ -182,8 +132,16 @@ export default function Index() {
       </Box>
 
       <Box paddingBlockEnd='300'>
-        <Text as={"h2"} variant="headingMd" fontWeight='regular' children={`Welcome to ZionSEO`} />
+        <InlineGrid columns={{ xs: 1, sm: 2 }} gap="300" alignItems="center">
+          <Text as={"h2"} variant="headingMd" fontWeight='regular' children={`Welcome to ZionSEO`} />
+          <div style={{ justifySelf: "end" }}>
+            <Button variant="primary" tone="success" loading={syncFetcher.state !== "idle"} onClick={() => syncFetcher.submit(null, { method: "post", action: "/app/api/sync-catalog" })}>
+              Sync catalog
+            </Button>
+          </div>
+        </InlineGrid>
       </Box>
+
 
       <Layout>
 

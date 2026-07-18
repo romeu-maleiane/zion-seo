@@ -281,20 +281,20 @@ function MetaDataOptimizerPage() {
                                 dataPrimaryLink
                                 url={`/app/optimize-meta-data/${productId.replace('gid://shopify/Product/', '')}`}
                             >
-                                {title || 'Ã¢â‚¬â€'}
+                                {title || ''}
                             </Link>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <div style={{ width: '200px' }}>
                                 <Text as='p' truncate>
-                                    {currentMetaTitle || 'Ã¢â‚¬â€'}
+                                    {currentMetaTitle || ''}
                                 </Text>
                             </div>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <div style={{ width: '250px' }}>
                                 <Text as='p' truncate>
-                                    {currentMetaDescription || 'Ã¢â‚¬â€'}
+                                    {currentMetaDescription || ''}
                                 </Text>
                             </div>
                         </IndexTable.Cell>

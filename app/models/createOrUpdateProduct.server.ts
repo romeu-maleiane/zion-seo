@@ -27,8 +27,7 @@ interface CreateOrUpdateProductsType {
 export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateProductsType>, shopId: string) => {
 
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const createdsProductsOrUpdateds = productsData.map(async (product) => {
+        await Promise.all(productsData.map(async (product) => {
 
             const productImage = product?.node?.featuredMedia?.image?.url
                 ? product.node.featuredMedia.image.url
@@ -72,7 +71,7 @@ export const createOrUpdateProducts = async (productsData: Array<CreateOrUpdateP
             })
 
             return ProductCreatedOrUpdated
-        })
+        }))
 
     } catch (error) {
         console.error('CreateOrUpdateProducts Error: ', error)

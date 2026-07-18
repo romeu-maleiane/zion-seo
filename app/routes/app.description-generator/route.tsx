@@ -273,13 +273,13 @@ function MetaDataOptimizerPage() {
                                 dataPrimaryLink
                                 url={`/app/generate-product-description/${productId.replace('gid://shopify/Product/', '')}`}
                             >
-                                {title || 'Ã¢â‚¬â€'}
+                                {title || ''}
                             </Link>
                         </IndexTable.Cell>
                         <IndexTable.Cell>
                             <div style={{ width: '250px' }}>
                                 <Text as='p' truncate>
-                                    {currentDescription || 'Ã¢â‚¬â€'}
+                                    {currentDescription || ''}
                                 </Text>
                             </div>
                         </IndexTable.Cell>
